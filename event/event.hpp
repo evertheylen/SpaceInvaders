@@ -21,11 +21,23 @@ public:
 	virtual EventType type() = 0;
 };
 
+
 class Move: public Event {
 public:
 	EventType type() {
 		return EventType::MOVE;
 	}
 };
+
+
+/*
+class XXXXX: public Event {
+public:
+	EventType type() {
+		return XXXXX
+	}
+};
+
+*/
 
 }

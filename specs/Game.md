@@ -7,6 +7,8 @@ A Game also has a stopwatch, generating Ticks (which are Events). The stopwatch 
 
 A Game also facilitates all the communication between Models, Views and Controllers. This way, you can easily log all the communication, among other advantages. Where it is needed, Game has to provide some Queue to remove possible concurrency problems that may arise when using multiple controlles.
 
+Basically, Game is responsible for making sure all components work together, managing concurrency is the hardest to maintain.
+
 One thing Game does **NOT** do, is facilitating the communication between a View/Controller and whatever extra class they may need (and share with a Controller/View, respectively). For example, a WebView and WebController may both use the same websocket, but Game has no business knowing about this communication.
 
 Initialize a Game with an XML file, which it will pass on to the model.

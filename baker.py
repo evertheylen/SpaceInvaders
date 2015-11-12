@@ -458,7 +458,7 @@ class Unit(BaseUnit):
                 # format (regex): "unit>(worker)?>action"
                 parts = dep.split(">")
                 if len(parts) != 3:
-                    raise ConfigError("dependency %s"%dep, "bake_me code for %s"*self.name)
+                    raise ConfigError("dependency %s"%dep, "bake_me code for %s"%self.name)
                 dname, dworker_s, daction = tuple(parts)
                 dunit = create_unit(dname, config)
                 dworker = workers[dworker_s]  # this can be None, but should be fixed by the Todo's
