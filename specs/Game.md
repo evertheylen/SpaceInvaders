@@ -14,21 +14,19 @@ Initialize a Game with an XML file, which it will pass on to the model.
 
 ## Concrete methods
 
-	notifyViews(Event* e)
-	
-	notifyModel(Event* e)
-	
-	[un]registerView(View* v)
-	
-	[un]registerController(Controller* c)
-	// I see no use in this yet
-	
-	const Model& getModel()
-	// I see no use in this yet
-	
-	start()
-	stop()
-	
+```c++
+notifyViews(Event* e)
 
+notifyModel(Event* e)
 
+[un]registerView(View* v)
+
+[un]registerController(Controller* c)
+// I see no use in this yet
+
+const Model& getModel()
+// I see no use in this yet
+
+run()
+```
 
