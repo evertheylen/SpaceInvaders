@@ -14,6 +14,7 @@ dependencies["headers"] = [
 
 #include <memory>
 #include <set>
+#include <mutex>
 
 #include "libs/tinyxml/tinyxml.h"
 
@@ -39,12 +40,16 @@ public:
 	
 	void run();
 	// starts the stopwatch and enables communication between MVC
-
+	
+	// so the view can get ask about the model if needed
+	const model::Model& get_model();
+	
+	std::mutex model_mutex;
 private:
 	// stopwatch
 	
 	// the model
-	std::unique_ptr<model::Model> m_model;
+	model::Model the_model;
 	
 	// controllers
 	std::set<controller::Controller*> controllers;

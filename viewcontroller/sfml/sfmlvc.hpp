@@ -14,6 +14,8 @@ dependencies["build_objects"] = [
 #pragma once
 
 #include <cassert>
+#include <atomic>
+#include <mutex>
 
 #include "SFML/Graphics.hpp"
 
@@ -35,7 +37,8 @@ public:
 	// might or might not block for a long time
 	void start();
 	
-private:
+	
+protected:
 	vc::SfmlVc* handle = nullptr;
 };
 
@@ -43,8 +46,8 @@ private:
 
 class SfmlVc {
 public:
-	SfmlVc(unsigned int width=500, unsigned int height=500):
-		window(sf::VideoMode(width, height), "Space Invaders") {}
+	// SfmlVc should already be in a usable state after the constructor (obviously)
+	SfmlVc(unsigned int width=800, unsigned int height=600);
 	
 	void couple_controller(si::controller::SfmlController* _controller);
 	void decouple_controller();
@@ -58,7 +61,8 @@ public:
 	sf::RenderWindow window;
 	
 private:
-	volatile bool running = false;
+	// multithreaded stuff
+	std::atomic<bool> running{false};
 	
 	si::controller::SfmlController* controller = nullptr;
 	si::view::SfmlView* view = nullptr;

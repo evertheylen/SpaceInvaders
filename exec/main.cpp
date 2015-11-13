@@ -5,10 +5,9 @@
 
 dependencies["build_exec"] = [
 	"game>>build_objects",
-	"controller>>build_objects",
 	"controller/sfml>>build_objects",
-	"view>>build_objects",
 	"view/sfml>>build_objects",
+	"viewcontroller/sfml>>build_objects",
 	"libs/tinyxml>>build_objects",
 ]
 
@@ -22,9 +21,13 @@ executable = "spaceinvaders"
 
 #include "game/game.hpp"
 #include "view/sfml/sfmlview.hpp"
+#include "view/sfml/sfmlresources.hpp"
 #include "controller/sfml/sfmlcontroller.hpp"
 #include "model/model.hpp"
 #include "viewcontroller/sfml/sfmlvc.hpp"
+
+// so far support for multiple platforms :'(
+#include "X11/Xlib.h"
 
 using namespace si;
 using namespace si::model;
@@ -33,8 +36,12 @@ using namespace si::controller;
 using namespace si::vc;
 
 int main(int argc, char** argv) {
-	// Sfml Mode
-	std::cout << "Hello world\n";
+	// multithreading FTW
+	XInitThreads();
+	
+	// Load resources for SFML
+	SfmlView::load_resources();
+	
 	TiXmlDocument doc;
 	
 	Game g(doc);
@@ -59,6 +66,11 @@ int main(int argc, char** argv) {
 	g.registerController(&C2);
 	
 	g.run(); // runs until all views/controllers are done
+	
+	// cleanup:
+	SfmlView::unload_resources();
+	
+	return 0;
 }
 
 

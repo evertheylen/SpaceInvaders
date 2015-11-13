@@ -3,7 +3,8 @@
 
 dependencies["headers"] = [
 	"viewcontroller/sfml>>headers",
-	"controller>>headers"
+	"controller>>headers",
+	"model/entity>>headers",
 ]
 
 [stop baking] */
@@ -12,6 +13,7 @@ dependencies["headers"] = [
 
 #include "controller/controller.hpp"
 #include "viewcontroller/sfml/sfmlvc.hpp"
+#include "model/entity/entity.hpp"
 
 #pragma once
 
@@ -30,6 +32,7 @@ public:
 	void handleSfmlEvent(sf::Event& e);
 private:
 	Game* game;
+	si::model::Player* my_player;
 };
 
 }

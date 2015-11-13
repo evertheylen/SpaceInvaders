@@ -8,15 +8,17 @@
 using namespace si;
 
 Game::Game(const TiXmlDocument& doc) {
-	m_model = std::unique_ptr<model::Model>(new model::Model(doc, this));
+	the_model = model::Model(doc, this);
 }
 
 void Game::notifyModel(Event* e) {
-	// only notify model if running
+	the_model.handleEvent(e);
 }
 
 void Game::notifyViews(Event* e) {
-	// only notify views if running
+	for (auto& v: views) {
+		v->handleEvent(e);
+	}
 }
 
 void Game::registerView(view::View* v) {
@@ -35,6 +37,11 @@ void Game::unregisterController(controller::Controller* c) {
 	controllers.erase(c);
 }
 
+const model::Model& Game::get_model() {
+	return the_model;
+}
+
+
 
 // helper functions
 void start_controller(controller::Controller* c) {
@@ -44,7 +51,6 @@ void start_controller(controller::Controller* c) {
 void start_view(view::View* v) {
 	v->start();
 }
-
 
 void Game::run() {
 	std::vector<std::thread> threads(views.size() + controllers.size());
@@ -59,9 +65,12 @@ void Game::run() {
 		i++;
 	}
 	
-	// work is being done
-	i = 0;
+	// TODO TICKS!
+	// ... work is being done ...
+	// ... lots of Aliens are being murdered ...
+	
 	for (auto& t: threads) {
+		// join on all views/controllers
 		t.join();
 	}
 }

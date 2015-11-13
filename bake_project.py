@@ -12,7 +12,7 @@ gcc_config = ConfigDict({
     "compiler": "clang++",
     "mode": "g3",
     "std": "c++11",
-    "extra": "-Wall -pthread -I libs/sfml/include/ -Llibs/sfml/cmake_stuff/ -lsfml-graphics -lsfml-window -lsfml-system",
+    "extra": "-Wall -pthread -I libs/sfml/include/ -Llibs/sfml/cmake_stuff/ -lsfml-graphics -lsfml-window -lsfml-system -lX11",
     "input": ["*.cpp", "*.cc", "*.hpp", "*.h", "*.hh"]
 })
 

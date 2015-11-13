@@ -16,23 +16,29 @@ void SfmlBase::start() {
 
 
 
+SfmlVc::SfmlVc(unsigned int width, unsigned int height):
+		window(sf::VideoMode(width, height), "Space Invaders") {
+	// drawing is done from another thread, not this one, so disable it
+	window.setActive(false);
+}
+
 
 void SfmlVc::start() {
 	if (running) return;
+	
 	running = true;
-	assert(controller != nullptr);
-	// no need to assert that there is a view
 	
 	std::cout << "SfmlVc Started\n";
 	
-	sf::Event event;
-	while(window.waitEvent(event)) {
-		std::cout << "SfmlVc got event\n";
-		// SFML likes blocking so we do too
-		controller->handleSfmlEvent(event);
-		if (event.type == sf::Event::Closed) {
-			window.close();
-			break;
+	if (controller != nullptr) {
+		sf::Event event;
+		while(window.waitEvent(event)) {
+			// SFML likes blocking so we do too
+			controller->handleSfmlEvent(event);
+			if (event.type == sf::Event::Closed) {
+				window.close();
+				break;
+			}
 		}
 	}
 	running = false;
