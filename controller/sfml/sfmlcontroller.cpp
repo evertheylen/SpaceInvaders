@@ -11,11 +11,13 @@ SfmlController::SfmlController(Game* g):
 		game(g) {}
 
 void SfmlController::start() {
+	std::cout << "Controller has started\n";
 	game->model_mutex.lock();
 	my_player = game->get_model().get_player();
 	game->model_mutex.unlock();
 	
 	SfmlBase::start();
+	std::cout << "Controller done\n";
 }
 
 void SfmlController::handleSfmlEvent(sf::Event& e) {

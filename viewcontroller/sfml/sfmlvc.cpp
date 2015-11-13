@@ -25,23 +25,26 @@ SfmlVc::SfmlVc(unsigned int width, unsigned int height):
 
 void SfmlVc::start() {
 	if (running) return;
-	
 	running = true;
 	
 	std::cout << "SfmlVc Started\n";
 	
 	if (controller != nullptr) {
+		std::cout << "SfmlVc Input loop started\n";
 		sf::Event event;
-		while(window.waitEvent(event)) {
+		while (window.waitEvent(event)) {
 			// SFML likes blocking so we do too
 			controller->handleSfmlEvent(event);
 			if (event.type == sf::Event::Closed) {
+				std::cout << "SfmlVc got close Event\n";
 				window.close();
 				break;
 			}
 		}
 	}
 	running = false;
+	
+	std::cout << "SfmlVc Stopped\n";
 }
 
 void SfmlVc::couple_controller(si::controller::SfmlController* _controller) {

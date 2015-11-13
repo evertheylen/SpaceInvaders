@@ -13,11 +13,12 @@ SfmlView::SfmlView(Game* g): game(g) {
 
 void SfmlView::start() {
 	// this is where we draw
+	std::cout << "View has started\n";
 	handle->window.setActive(true);
-	
 	redraw();
 	
 	SfmlBase::start();
+	std::cout << "View is done\n";
 }
 
 void SfmlView::redraw() {

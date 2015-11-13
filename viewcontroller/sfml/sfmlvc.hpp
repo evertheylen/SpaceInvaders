@@ -49,6 +49,8 @@ public:
 	// SfmlVc should already be in a usable state after the constructor (obviously)
 	SfmlVc(unsigned int width=800, unsigned int height=600);
 	
+	SfmlVc(const SfmlVc& other) {};
+	
 	void couple_controller(si::controller::SfmlController* _controller);
 	void decouple_controller();
 	

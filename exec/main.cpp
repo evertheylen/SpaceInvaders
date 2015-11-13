@@ -16,6 +16,7 @@ executable = "spaceinvaders"
 [stop baking] */
 
 #include <iostream>
+#include <vector>
 
 #include "libs/tinyxml/tinyxml.h"
 
@@ -35,6 +36,8 @@ using namespace si::view;
 using namespace si::controller;
 using namespace si::vc;
 
+const int numSfmlVcs = 10;
+
 int main(int argc, char** argv) {
 	// multithreading FTW
 	XInitThreads();
@@ -46,24 +49,24 @@ int main(int argc, char** argv) {
 	
 	Game g(doc);
 	
-	SfmlView V(&g);
-	SfmlController C(&g);
-	SfmlVc handle; // at this point the SfmlWindow is created
-	handle.couple_view(&V);
-	handle.couple_controller(&C);
-	
-	// JUST LOOK AT IT
-	// THIS IS AWESOME
-	SfmlView V2(&g);
-	SfmlController C2(&g);
-	SfmlVc handle2; // at this point the SfmlWindow is created
-	handle2.couple_view(&V2);
-	handle2.couple_controller(&C2);
-	
-	g.registerView(&V);
-	g.registerController(&C);
-	g.registerView(&V2);
-	g.registerController(&C2);
+	std::vector<SfmlView*> views;
+	views.reserve(numSfmlVcs);
+	std::vector<SfmlController*> controllers;
+	controllers.reserve(numSfmlVcs);
+	std::vector<SfmlVc*> handles;
+	handles.reserve(numSfmlVcs);
+	for (int i=0; i<numSfmlVcs; i++) {
+		views.emplace_back(new SfmlView(&g));
+		controllers.emplace_back(new SfmlController(&g));
+		handles.emplace_back(new SfmlVc()); // at this point the SfmlWindow is created
+		handles[i]->couple_view(views[i]);
+		handles[i]->couple_controller(controllers[i]);
+		
+		// dangerous :)
+		// only works because I reserved enough place
+		g.registerView(views[i]);
+		g.registerController(controllers[i]);
+	}
 	
 	g.run(); // runs until all views/controllers are done
 	
