@@ -9,58 +9,50 @@ dependencies["headers"] = [
 
 #pragma once
 
+#include "yorel/multi_methods.hpp"
+
 #include "util/util.hpp"
 
 namespace si {
 
-enum EventType {
-	START_MOVE,
-	END_MOVE,
-	TICK,
-	REDRAW,
-	// ...
-};
-
-class Event {
+// Event cooperates with yomm11
+class Event: public yorel::multi_methods::selector {
 public:
-	virtual EventType type() = 0;
-};
-
-
-// more elegant way to define a type() function
-template <EventType T>
-class EventBase: public Event {
-public:
-	EventType type() {
-		return T;
+	MM_CLASS(Event);
+	
+	Event() {
+		MM_INIT();
 	}
 };
 
+
 namespace model {
-class Player;
+	// forward declaration
+	class Entity;
 }
 
-class BaseMove {
+class SetMovement: public Event {
 public:
-	BaseMove(util::Direction _dir, si::model::Player* _player): dir(_dir), player(_player) {}
-	util::Direction dir;
-	si::model::Player* player;
+	MM_CLASS(SetMovement, Event);
+	
+	SetMovement(util::Vector2D_d _dir, si::model::Entity* e):
+		dir(_dir), entity(e) {}
+	
+	util::Vector2D_d dir;
+	si::model::Entity* entity;
 };
 
-class StartMove: public EventBase<EventType::START_MOVE>, public BaseMove {
-public:
-	using BaseMove::BaseMove;
+class Tick: public Event {
+	MM_CLASS(Tick, Event);
 };
 
-
-class EndMove: public EventBase<EventType::END_MOVE>, public BaseMove {
-public:
-	using BaseMove::BaseMove;
+class Redraw: public Event {
+	MM_CLASS(Redraw, Event);
 };
 
-
-class Tick: public EventBase<EventType::TICK> {};
-
-class Redraw: public EventBase<EventType::REDRAW> {};
+// TODO:
+//  - scene change?
+//  - ...
+//  - comment about implicit events in dispatchers within model
 
 }

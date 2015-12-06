@@ -2,44 +2,52 @@
 /* [bake me]
 
 dependencies["headers"] = [
+	"util>>headers"
 ]
 
 [stop baking] */
 
 #pragma once
 
+#include "yorel/multi_methods.hpp"
+
+#include "util/util.hpp"
+#include "movement.hpp"
+
+
 namespace si {
 namespace model {
 
-enum EntityType {
-	PLAYER, ALIEN
-};
 
-class Entity {
+class Entity: public yorel::multi_methods::selector {
 public:
-	virtual EntityType type() = 0;
-	
-	Entity() = default;
-	Entity(double _x, double _y): x(_x), y(_y) {}
-	
-	double x = 0;
-	double y = 0;
-};
-
-// same trick as for Events
-template <EntityType T>
-class EntityBase: public Entity {
-public:
-	EntityType type() {
-		return T;
+	MM_CLASS(Entity);
+		
+	Entity() {
+		MM_INIT();
 	}
+	
+	Entity(double _x, double _y): pos(_x, _y) {
+		MM_INIT();
+	}
+	
+	virtual ~Entity() {}
+	
+	util::Vector2D_d pos;
+	Movement mov;  // some other physics term?
+	               // default goes nowhere
+};
+
+
+class Player: public Entity {
+	MM_CLASS(Player, Entity);
 	using Entity::Entity;
 };
 
-class Player: public EntityBase<EntityType::PLAYER> {
-};
 
-class Alien: public EntityBase<EntityType::ALIEN> {
+class Alien: public Entity {
+	MM_CLASS(Alien, Entity);
+	using Entity::Entity;
 };
 
 

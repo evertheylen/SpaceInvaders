@@ -9,11 +9,10 @@
 using namespace si::vc;
 
 
-void SfmlBase::start() {
+std::thread* SfmlBase::start() {
 	assert(handle != nullptr);
-	handle->start();
+	return handle->start();
 }
-
 
 
 SfmlVc::SfmlVc(unsigned int width, unsigned int height):
@@ -22,18 +21,15 @@ SfmlVc::SfmlVc(unsigned int width, unsigned int height):
 	window.setActive(false);
 }
 
-
-void SfmlVc::start() {
-	if (running) return;
-	running = true;
-	
-	std::cout << "SfmlVc Started\n";
-	
+void SfmlVc::run_thread() {
 	if (controller != nullptr) {
 		std::cout << "SfmlVc Input loop started\n";
 		sf::Event event;
-		while (window.waitEvent(event)) {
+
+		// TODO segfault?
+		while (window.isOpen() and window.waitEvent(event)) {
 			// SFML likes blocking so we do too
+			std::cout << "SfmlVc got event\n";
 			controller->handleSfmlEvent(event);
 			if (event.type == sf::Event::Closed) {
 				std::cout << "SfmlVc got close Event\n";
@@ -42,10 +38,14 @@ void SfmlVc::start() {
 			}
 		}
 	}
-	running = false;
-	
-	std::cout << "SfmlVc Stopped\n";
 }
+
+std::thread* SfmlVc::start() {
+	if (running_thread != nullptr) return running_thread;
+	
+	return new std::thread(&SfmlVc::run_thread, this);
+}
+
 
 void SfmlVc::couple_controller(si::controller::SfmlController* _controller) {
 	// friends!

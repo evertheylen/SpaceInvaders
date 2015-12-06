@@ -16,6 +16,7 @@ dependencies["build_objects"] = [
 #include <cassert>
 #include <atomic>
 #include <mutex>
+#include <thread>
 
 #include "SFML/Graphics.hpp"
 
@@ -35,8 +36,7 @@ public:
 	friend SfmlVc;
 	
 	// might or might not block for a long time
-	void start();
-	
+	std::thread* start();
 	
 protected:
 	vc::SfmlVc* handle = nullptr;
@@ -49,7 +49,7 @@ public:
 	// SfmlVc should already be in a usable state after the constructor (obviously)
 	SfmlVc(unsigned int width=800, unsigned int height=600);
 	
-	SfmlVc(const SfmlVc& other) {};
+	SfmlVc(const SfmlVc& other) = delete;
 	
 	void couple_controller(si::controller::SfmlController* _controller);
 	void decouple_controller();
@@ -57,14 +57,16 @@ public:
 	void couple_view(si::view::SfmlView* _view);
 	void decouple_view();
 	
-	// Will block for a long time (usually)
-	void start();
+	std::thread* start();
 	
 	sf::RenderWindow window;
 	
 private:
+	// Will block for a long time (usually)
+	void run_thread();
+	
 	// multithreaded stuff
-	std::atomic<bool> running{false};
+	std::atomic<std::thread*> running_thread{nullptr};
 	
 	si::controller::SfmlController* controller = nullptr;
 	si::view::SfmlView* view = nullptr;

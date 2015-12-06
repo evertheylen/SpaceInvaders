@@ -1,0 +1,44 @@
+
+#include "ccq.hpp"
+
+#include <chrono>
+#include <thread>
+
+TEST(Util, ConcurrentQueue) {
+	using namespace si::util;
+	CCQueue<int> q;
+	auto producer = [&]() {
+		for (int i=0; i<500; i++) {
+			q.push(i);
+		}
+	};
+	
+	volatile int result;
+	
+	auto consumer = [&]() {
+		int total = 0;
+		while (true) while (not q.empty()) {
+			int i = q.pop();
+			total += i;
+			if (i==-1) {
+				result = total;
+				return;
+			}
+		}
+	};
+	
+	std::thread t(consumer);
+	std::vector<std::thread> prods; 
+	
+	for (int i=0; i<50; i++) {
+		prods.emplace_back(std::thread(producer));
+	}
+	
+	for (auto& p: prods) {
+		p.join();
+	}
+	
+	q.push(-1);
+	t.join();
+	ASSERT_EQ(result, 6237499);
+}

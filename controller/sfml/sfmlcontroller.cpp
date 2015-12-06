@@ -10,32 +10,38 @@ using namespace si;
 SfmlController::SfmlController(Game* g):
 		game(g) {}
 
-void SfmlController::start() {
+
+std::thread* SfmlController::start() {
 	std::cout << "Controller has started\n";
-	game->model_mutex.lock();
+	// Model should not be started yet!
+	// otherwise the model_lock will be locked until the end of the game
+	game->model_lock();
 	my_player = game->get_model().get_player();
-	game->model_mutex.unlock();
+	game->model_unlock();
 	
-	SfmlBase::start();
+	std::thread* t = SfmlBase::start();
 	std::cout << "Controller done\n";
+	return t;
 }
 
 void SfmlController::handleSfmlEvent(sf::Event& e) {
+	//std::cout << "controller got event\n";
 	switch (e.type) {
 		// key pressed
 		case sf::Event::KeyPressed:
 			switch(e.key.code) {
 				case sf::Keyboard::Left:
 					// TODO memory leaks
-					game->notifyModel(new StartMove(util::Direction::WEST, my_player));
+					game->notifyModel(new SetMovement(util::WEST, my_player));
 					break;
 				case sf::Keyboard::Right:
-					game->notifyModel(new StartMove(util::Direction::EAST, my_player));
+					game->notifyModel(new SetMovement(util::EAST, my_player));
 					break;
 				default: break;
 			}
 			break;
-
+		case sf::Event::KeyReleased:
+			game->notifyModel(new SetMovement(util::HOLD, my_player));
 		// we don't process other types of events
 		default:
 			break;

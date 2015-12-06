@@ -6,6 +6,7 @@ dependencies["headers"] = [
 	"libs/tinyxml>>headers",
 	"view>>headers",
 	"model>>headers",
+	"util/ccq>>headers",
 ]
 
 [stop baking] */
@@ -16,46 +17,62 @@ dependencies["headers"] = [
 #include <set>
 #include <mutex>
 
-#include "libs/tinyxml/tinyxml.h"
+#include "libs/picojson.hpp"
 
 #include "event/event.hpp"
 #include "view/view.hpp"
 #include "controller/controller.hpp"
 #include "model/model.hpp"
+#include "util/ccq/ccq.hpp"
 
 namespace si {
 
 class Game {
 public:
-	Game(const TiXmlDocument& doc);
+	Game(const picojson::value& conf);
 	
-	void notifyViews(Event* e);
-	void notifyModel(Event* e);
+	// --- starts everything! ---
+	// register first
+	void run();
 	
+	
+	// --- [un]registering ---
 	void registerView(view::View* v);
 	void unregisterView(view::View* v);
 	
 	void registerController(controller::Controller* c);
 	void unregisterController(controller::Controller* c);
 	
-	void run();
-	// starts the stopwatch and enables communication between MVC
 	
-	// so the view can get ask about the model if needed
-	const model::Model& get_model();
+	// --- communication between M/V/C ---
+	// Model --> Views
+	void notifyViews(Event* e);
+	// Controllers --> Model
+	void notifyModel(Event* e);
 	
-	std::mutex model_mutex;
+	// so the view can get info about the model if needed
+	const model::Model& get_model() const;
+	
+	// gives an Event* to the model when asked, could be nullptr
+	Event* get_controller_event();
+	
+	void model_lock();
+	void model_unlock();
+	
 private:
-	// stopwatch
 	
-	// the model
+	// the model, also contains a stopwatch
 	model::Model the_model;
+	// CCQ for the model
+	util::CCQueue<Event*> model_queue;
+	// mutex for the model
+	std::mutex model_mutex;
 	
 	// controllers
 	std::set<controller::Controller*> controllers;
 	
-	// views
-	std::set<view::View*> views;
+	// views, each one has a CCQ
+	std::map<view::View*, std::unique_ptr<util::CCQueue<Event*>>> views;
 };
 
 }

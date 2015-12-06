@@ -11,14 +11,14 @@ SfmlView::SfmlView(Game* g): game(g) {
 	backgroundsprite.setTexture(res->background);
 }
 
-void SfmlView::start() {
+std::thread* SfmlView::start() {
 	// this is where we draw
 	std::cout << "View has started\n";
-	handle->window.setActive(true);
-	redraw();
+	// TODO draw from this thread lol
+	handle->window.setActive(false);
+	//redraw();
 	
-	SfmlBase::start();
-	std::cout << "View is done\n";
+	return SfmlBase::start();
 }
 
 void SfmlView::redraw() {
@@ -26,30 +26,28 @@ void SfmlView::redraw() {
 	
 	handle->window.draw(backgroundsprite);
 	
+	// TODO remove this, draw from the right thread
+	handle->window.setActive(true);
+	//std::cout << "Trying to draw\n";
+	
 	// initialize all sprites
-	game->model_mutex.lock();
 	const auto& model = game->get_model();
 	for (const auto& uniq_e: model.entities) {
 		si::model::Entity* e = uniq_e.get();
 		sprites[e] = sf::Sprite();
 		//sprites[e].setTextureRect(sf::IntRect(e->x, e->y, 64, 64));
 		sprites[e].setTexture(SfmlView::res->player);
-		sprites[e].setPosition(e->x, e->y);
+		sprites[e].setPosition(e->pos.x, e->pos.y);
 		handle->window.draw(sprites[e]);
 	}
-	game->model_mutex.unlock();
 	
 	handle->window.display();
 }
 
 
 void SfmlView::handleEvent(Event* e) {
-	switch (e->type()) {
-		case EventType::REDRAW: {
-			redraw();
-		} default: {
-			break;
-		}
+	if (Redraw* r = dynamic_cast<Redraw*>(e)) {
+		redraw();
 	}
 }
 

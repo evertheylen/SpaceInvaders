@@ -1,0 +1,14 @@
+{
+	"levels": [
+		{
+			"name": "level 1",
+			"players": 1,
+			"aliens": true
+		},
+		{
+			"name": "level 2",
+			"players": 1,
+			"aliens": true
+		}
+	]
+}

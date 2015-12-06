@@ -1,7 +1,8 @@
 
 collections = ConfigDict({
     "@execs": ["exec"],
-    "@all": ["controller", "exec", "game", "model", "model/entity", "util", "view"]
+    "@all": ["controller", "exec", "game", "model", "model/entity", "util", "view", 
+             "exceptions", "viewcontroller"]
 })
 
 extensions =  [".cpp", ".cc", ".hpp", ".hh", ".h", ".test"]
@@ -12,7 +13,8 @@ gcc_config = ConfigDict({
     "compiler": "clang++",
     "mode": "g3",
     "std": "c++11",
-    "extra": "-Wall -pthread -I libs/sfml/include/ -Llibs/sfml/cmake_stuff/ -lsfml-graphics -lsfml-window -lsfml-system -lX11",
+    "pre_extra": "",
+    "post_extra": "-Wall -pthread -I libs/sfml/include/ -I libs/yomm11/include",
     "input": ["*.cpp", "*.cc", "*.hpp", "*.h", "*.hh"]
 })
 

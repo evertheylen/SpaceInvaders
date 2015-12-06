@@ -38,7 +38,7 @@ class SfmlView: public si::vc::SfmlBase, public View {
 public:
 	SfmlView(Game* g);
 	
-	void start();
+	std::thread* start();
 	
 	void handleEvent(si::Event* e);
 	

@@ -269,7 +269,7 @@ def inverse_from(l):
 def escape_path(s):
     #TODO possibly replace more stuff than a space
     # windows support?
-    news = s.replace(" ", "\\ ")
+    news = s.replace(" ", "\\ ").replace("(", "\\(").replace(")", "\\)")
     return news
     
 
@@ -397,7 +397,7 @@ class Unit(BaseUnit):
             "worker": "",
             "dependencies": {},
         }
-        self.worker = None
+        self.worker = None  # optional default worker for this unit
         self.deps = {}  # for each action, certain deps
         
         self.files = None
@@ -458,7 +458,7 @@ class Unit(BaseUnit):
                 # format (regex): "unit>(worker)?>action"
                 parts = dep.split(">")
                 if len(parts) != 3:
-                    raise ConfigError("dependency %s"%dep, "bake_me code for %s"%self.name)
+                    raise ConfigError("dependency %s"%dep, "bake_me code for %s"*self.name)
                 dname, dworker_s, daction = tuple(parts)
                 dunit = create_unit(dname, config)
                 dworker = workers[dworker_s]  # this can be None, but should be fixed by the Todo's
@@ -557,7 +557,20 @@ def done(status):
 class Todo(Dependency):
     def __init__(self, dep):
         self.unit = dep.unit
-        self.worker = dep.worker
+
+        # ATTENTION custom worker config support here
+        if there_exists(self.unit.data, lambda n: n in dep.worker.needs_config):
+            configs = []
+            config = project_config.new_extra_layer(self.unit.data)
+            for c in dep.worker.needs_config:
+                configs.append(config[c])
+                
+            self.real_worker = type(dep.worker)(*configs)
+            self.worker = dep.worker
+        else:
+            self.real_worker = dep.worker
+            self.worker = dep.worker
+        
         self.action = dep.action
         
         self.status = NOT_DONE
@@ -569,7 +582,7 @@ class Todo(Dependency):
             self.build_deps(init_deps)
         
         # also allow extra deps based on the worker and action
-        extra_deps = self.worker.extra_deps(self)
+        extra_deps = self.real_worker.extra_deps(self)
         dbg_print("Getting extra deps for", self)
         dbg_print("     =", repr(extra_deps))
         self.build_deps(extra_deps)
@@ -602,7 +615,7 @@ class Todo(Dependency):
             d.list_deps(writer)
         writer.untab()
     
-    def do(self, database, writer):
+    def do(self, database, writer):       
         writer.debugline("--> do " + str(self))
         # return True if we have actually performed work
         
@@ -638,16 +651,24 @@ class Todo(Dependency):
             # check whether we did this one before, during some previous run of baker.py
             # basically, we have to redo this todo if and only if
             #    max(dates(input_files)) > min(dates(output_files_prev_run))
-            input_files = self.worker.input_files(self)
+            input_files = self.real_worker.input_files(self)
             if self in database:
                 writer.debugline("in database")
                 output_files_prev_run = database.get_row(self)
                 writer.debugline("input files: " + ", ".join(input_files))
                 writer.debugline("output files prev run: " + ", ".join(output_files_prev_run))
                 # no input files?
-                max_input = max(dates_from_files(input_files)) if len(input_files) > 0 else MIN_DATE
+                try:
+                    max_input = max(dates_from_files(input_files)) if len(input_files) > 0 else MIN_DATE
+                except FileNotFoundError:
+                    max_input = MAX_DATE
+                    
                 # no output files, but it is in the database? no need to redo
-                min_output = min(dates_from_files(output_files_prev_run)) if len(output_files_prev_run) > 0 else MAX_DATE
+                try:
+                    min_output = min(dates_from_files(output_files_prev_run)) if len(output_files_prev_run) > 0 else MAX_DATE
+                except FileNotFoundError:
+                    min_output = MIN_DATE
+                
                 writer.debugline("dates max_input = {0}, min_output = {1}".format(max_input, min_output))
                 if max_input > min_output:
                     return self.actually_do(writer, database)
@@ -667,7 +688,7 @@ class Todo(Dependency):
     
     def actually_do(self, writer, database):
         writer.writeline(rgbtext("Performing Todo '" + str(self)+"'", cyan))
-        output = self.worker.do(self, writer)
+        output = self.real_worker.do(self, writer)
         writer.debugline(("output = " + ", ".join(output)) if output is not None else "output = None")
         database.set_row(self, output)
         self.status = JUST_DID
@@ -724,6 +745,7 @@ class RootTodo(Todo):
     def __init__(self, worker, action, cmd_units):
         self.unit = BaseUnit(project_name)
         self.worker = worker
+        self.real_worker = worker
         self.action = action
         self.deps = set()
         self.build_deps([Dependency(u, None, "") for u in cmd_units])
@@ -801,8 +823,8 @@ class GccCompiler(EasyWorker):
     
     def __init__(self, config):
         self.__dict__.update(config)
-        self.cmd_object = "{s.compiler} -{s.mode} -std={s.std} -c -x c++ {source} -o {objloc} {include} {s.extra}"
-        self.cmd_exec = "{s.compiler} -{s.mode} -std={s.std} -o {execloc} {objects} {s.extra}"
+        self.cmd_object = "{s.compiler} {s.pre_extra} -{s.mode} -std={s.std} {include} -c -x c++ {source} -o {objloc} {s.post_extra}"
+        self.cmd_exec = "{s.compiler} {s.pre_extra} -{s.mode} -std={s.std} -o {execloc} {objects} {s.post_extra}"
     
     def extra_deps(self, todo):
         extra = set()
@@ -1124,7 +1146,9 @@ standard_workers_by_action = {
 
 global project_name
 project_name = os.path.split(os.getcwd())[-1]
-        
+    
+global project_config    
+project_config = None
     
 def main():
     # which unit to bui-- perform some action on?
@@ -1142,14 +1166,15 @@ def main():
     
     writer = IndentWriter(args.debug)
     
-    project_config = {}
-    if not exec_file("bake_project.py", project_config):
+    dict_project_config = {}
+    if not exec_file("bake_project.py", dict_project_config):
         raise ConfigError("this directory", "bake_project.py", "an empty file works too")
     
     # NOTE this is different from the original Baker
     #default_config = {}
     #assert exec_file("default.py", default_config)
-    config = HardConfig([project_config])
+    global project_config
+    project_config = HardConfig([dict_project_config])
     
     db = Database(".baking_database")
     
@@ -1159,16 +1184,15 @@ def main():
         worker_classes[w.shortname] = w
     
     for w in workers_list:
-        workers[w.shortname] = parse_worker(w, config, worker_classes)
+        workers[w.shortname] = parse_worker(w, project_config, worker_classes)
     
     workers[""] = None
     
     cmd_units = set()
     
     for uname in args.units:   
-        u = create_unit(uname, config)
+        u = create_unit(uname, project_config)
         cmd_units.add(u)
-
     
     if args.list_deps:
         for u in all_units.values():

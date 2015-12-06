@@ -1,15 +1,131 @@
 
 #pragma once
 
+#include <cmath>
+#include <cassert>
+
 namespace si {
 namespace util {
 
-enum Direction {
-	NORTH, EAST, SOUTH, WEST
+
+
+template <typename T>
+class Vector2D {
+public:
+	Vector2D() = default;
+	
+	Vector2D(T _x, T _y): x(_x), y(_y) {}
+	
+	Vector2D& operator+=(const Vector2D& other) {
+		x += other.x;
+		y += other.y;
+		return *this;
+	}
+	
+	Vector2D& operator-=(const Vector2D& other) {
+		x -= other.x;
+		y -= other.y;
+		return *this;
+	}
+	
+	
+	Vector2D& operator*=(const Vector2D& other) {
+		x *= other.y;
+		y *= other.y;
+		return *this;
+	}
+	
+	Vector2D& operator/=(const Vector2D& other) {
+		assert(other.x != 0 and other.y != 0);
+		x /= other.x;
+		y /= other.y;
+		return *this;
+	}
+	
+	template <typename ScalarT>
+	Vector2D& operator*=(const ScalarT& s) {
+		x *= s;
+		y *= s;
+		return *this;
+	}
+	
+	template <typename ScalarT>
+	Vector2D& operator/=(const ScalarT& s) {
+		assert(s != 0);
+		x /= s;
+		y /= s;
+		return *this;
+	}
+	
+	
+	Vector2D& normalize() {
+		T len = length();
+		if (len != 0 and len != 1) {
+			x /= len;
+			y /= len;
+		}
+		return *this;
+	}
+	
+	T length() {
+		return sqrt(x*x + y*y);
+	}
+	
+	T x = 0;
+	T y = 0;
 };
 
-void perform(const Direction& dir, double& x, double& y, double amount);
+template <typename T>
+Vector2D<T> operator+(const Vector2D<T>& a, const Vector2D<T>& b) {
+	return Vector2D<T>(a.x + b.x, a.y + b.y);
+}
 
+template <typename T>
+Vector2D<T> operator-(const Vector2D<T>& a, const Vector2D<T>& b) {
+	return Vector2D<T>(a.x - b.x, a.y - b.y);
+}
+
+template <typename T, typename ScalarT>
+Vector2D<T> operator*(const Vector2D<T>& v, ScalarT s) {
+	return Vector2D<T>(v.x*s, v.y*s);
+}
+
+template <typename T, typename ScalarT>
+Vector2D<T> operator*(ScalarT s, const Vector2D<T>& v) {
+	return Vector2D<T>(v.x*s, v.y*s);
+}
+
+template <typename T, typename ScalarT>
+Vector2D<T> operator/(const Vector2D<T>& v, ScalarT s) {
+	assert(s != 0);
+	return Vector2D<T>(v.x/s, v.y/s);
+}
+
+template <typename T, typename ScalarT>
+Vector2D<T> operator/(ScalarT s, const Vector2D<T>& v) {
+	assert(s != 0);
+	return Vector2D<T>(v.x/s, v.y/s);
+}
+
+template <typename T>
+Vector2D<T> operator*(const Vector2D<T>& a, const Vector2D<T>& b) {
+	return Vector2D<T>(a.x * b.x, a.y * b.y);
+}
+
+template <typename T>
+Vector2D<T> operator/(const Vector2D<T>& a, const Vector2D<T>& b) {
+	assert(b.x != 0 and b.y != 0);
+	return Vector2D<T>(a.x / b.x, a.y / b.y);
+}
+
+
+using Vector2D_d = Vector2D<double>;
+
+const Vector2D_d NORTH = Vector2D_d(0, 1);
+const Vector2D_d EAST = Vector2D_d(1, 0);
+const Vector2D_d SOUTH = Vector2D_d(0, -1);
+const Vector2D_d WEST = Vector2D_d(-1, 0);
+const Vector2D_d HOLD = Vector2D_d(0, 0);
 
 }
 }
