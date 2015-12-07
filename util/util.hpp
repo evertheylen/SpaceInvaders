@@ -1,13 +1,37 @@
 
 #pragma once
 
+#include <iostream>
+
 #include <cmath>
 #include <cassert>
+#include <vector>
+#include <set>
+
+// 'additions' to STL
+
+
+template <typename T>
+std::vector<T> operator+(const std::vector<T>& a, const std::vector<T>& b) {
+	std::vector<T> total(a);
+	total.insert(total.end(), b.begin(), b.end());
+	return total;
+}
+
+template <typename T>
+std::vector<T>& operator+=(std::vector<T>& self, const std::vector<T>& other) {
+	self.insert(self.end(), other.begin(), other.end());
+	return self;
+}
+
+template <typename T>
+std::set<T>& operator+=(std::set<T>& self, const std::vector<T>& other) {
+	self.insert(other.begin(), other.end());
+	return self;
+}
 
 namespace si {
 namespace util {
-
-
 
 template <typename T>
 class Vector2D {
@@ -74,6 +98,12 @@ public:
 	T x = 0;
 	T y = 0;
 };
+
+template <typename T>
+std::ostream& operator<<(std::ostream& out, const Vector2D<T>& v) {
+	out << "(" << v.x << ", " << v.y << ")";
+	return out;
+}
 
 template <typename T>
 Vector2D<T> operator+(const Vector2D<T>& a, const Vector2D<T>& b) {

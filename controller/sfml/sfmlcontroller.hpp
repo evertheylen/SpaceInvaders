@@ -10,6 +10,7 @@ dependencies["headers"] = [
 [stop baking] */
 
 #include <thread>
+#include <vector>
 
 #include "SFML/Graphics.hpp"
 
@@ -29,7 +30,7 @@ class SfmlController: public si::vc::SfmlBase, public Controller {
 public:
 	SfmlController(Game* g);
 	
-	std::thread* start();
+	std::vector<std::thread*> start();
 	
 	void handleSfmlEvent(sf::Event& e);
 private:

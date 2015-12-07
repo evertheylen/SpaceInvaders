@@ -36,7 +36,7 @@ public:
 	friend SfmlVc;
 	
 	// might or might not block for a long time
-	std::thread* start();
+	std::vector<std::thread*> start();
 	
 protected:
 	vc::SfmlVc* handle = nullptr;
@@ -57,13 +57,13 @@ public:
 	void couple_view(si::view::SfmlView* _view);
 	void decouple_view();
 	
-	std::thread* start();
+	std::vector<std::thread*> start();
 	
 	sf::RenderWindow window;
 	
 private:
 	// Will block for a long time (usually)
-	void run_thread();
+	void loop();
 	
 	// multithreaded stuff
 	std::atomic<std::thread*> running_thread{nullptr};

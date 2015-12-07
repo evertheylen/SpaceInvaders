@@ -11,7 +11,7 @@ SfmlController::SfmlController(Game* g):
 		game(g) {}
 
 
-std::thread* SfmlController::start() {
+std::vector<std::thread*> SfmlController::start() {
 	std::cout << "Controller has started\n";
 	// Model should not be started yet!
 	// otherwise the model_lock will be locked until the end of the game
@@ -19,9 +19,8 @@ std::thread* SfmlController::start() {
 	my_player = game->get_model().get_player();
 	game->model_unlock();
 	
-	std::thread* t = SfmlBase::start();
 	std::cout << "Controller done\n";
-	return t;
+	return SfmlBase::start();
 }
 
 void SfmlController::handleSfmlEvent(sf::Event& e) {

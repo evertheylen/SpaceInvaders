@@ -20,7 +20,7 @@ public:
 	template <typename durationT>
 	void perform(durationT duration, util::Vector2D_d& vec) {
 		if (dir.length() != 0) {
-			vec += (dir * (speed*std::chrono::duration_cast<std::chrono::milliseconds>(duration).count()));
+			vec += (dir * (speed*std::chrono::duration_cast<std::chrono::microseconds>(duration).count()));
 		}
 	}
 	

@@ -3,6 +3,9 @@
 #include "game/game.hpp"
 #include "exceptions/exceptions.hpp"
 
+// TODO remove this!
+#include "SFML/Window.hpp"
+
 using namespace si;
 using namespace si::model;
 
@@ -27,38 +30,74 @@ Level::Level(const picojson::value& conf) {
 
 
 
-Model::Model(const picojson::value& conf, Game* g): game(g) {
-	player = new model::Player(200, 550);
-	player->mov.speed = 0.1; // TODO
-	entities.insert(std::unique_ptr<Entity>(player));
+// EntityRange
+
+EntityRange::EntityRange(const Model& _model):
+		model(_model) {}
+
+typename EntityRange::CollectionT::const_iterator EntityRange::begin() {
+	return model.entities.begin();
 }
 
-std::thread* Model::start() {
+typename EntityRange::CollectionT::const_iterator EntityRange::end() {
+	return model.entities.end();
+}
+
+unsigned int EntityRange::size() {
+	return model.entities.size();
+}
+
+
+
+// Model
+
+Model::Model(const picojson::value& conf, Game* g): game(g) {
+	player = new model::Player(200, 550);
+	player->mov.speed = 0.01; // TODO
+	entities.push_back(std::unique_ptr<Entity>(player));
+}
+
+std::vector<std::thread*> Model::start() {
 	// TODO assert only one thread
-	return new std::thread(&Model::loop, this);
+	return {new std::thread(&Model::loop, this)};
 }
 
 void Model::loop() {
+	// TODO remove
+	sf::Context ctx;
+	
 	game->model_lock();
 	util::Stopwatch::TimePoint current_tick = watch.now();
 	util::Stopwatch::TimePoint prev_tick;
+	
+	int changed_pos = 0;
+	
 	while (true) {
 		// TODO handle exit --> break
 		
 		// tick
 		prev_tick = current_tick;
 		current_tick = watch.now();
-		auto duration = current_tick - prev_tick;
+		util::Stopwatch::Duration duration = current_tick - prev_tick;
 		for (const std::unique_ptr<Entity>& e: entities) {
 			// TODO movements...
+			if (changed_pos < 3) 
+				std::cout << "start player pos = " << e->pos << "\n";
+			
 			e->mov.perform(duration, e->pos);
+			
+			if (changed_pos < 3) {
+				std::cout << "end player pos = " << e->pos << "\n";
+				changed_pos++;
+			}
 		}
 		
 		// handle Events, until nullptr
 		while (Event* e = game->get_controller_event()) {
 			if (SetMovement* m = dynamic_cast<SetMovement*>(e)) {
 				m->entity->mov.dir = m->dir;
-				std::cout << "setting dir\n";
+				std::cout << "setting dir to " << m->entity->mov.dir;
+				changed_pos = 0;
 			}
 		}
 		
@@ -68,6 +107,9 @@ void Model::loop() {
 	game->model_unlock();
 }
 
+EntityRange Model::all_entities() const {
+	return EntityRange(*this);
+}
 
 model::Player* Model::get_player() const {
 	return player;

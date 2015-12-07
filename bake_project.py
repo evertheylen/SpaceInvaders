@@ -10,11 +10,11 @@ extensions =  [".cpp", ".cc", ".hpp", ".hh", ".h", ".test"]
 scanned_files =  ["*.cpp", "*.cc", "*.hpp", "*.hh", "*.h", "*.test"]
 
 gcc_config = ConfigDict({
-    "compiler": "clang++",
+    "compiler": "g++",
     "mode": "g3",
     "std": "c++11",
-    "pre_extra": "",
-    "post_extra": "-Wall -pthread -I libs/sfml/include/ -I libs/yomm11/include",
+    "pre_extra": "-I libs/sfml/include/ -I libs/yomm11/include",
+    "post_extra": "-Wall -pthread ",
     "input": ["*.cpp", "*.cc", "*.hpp", "*.h", "*.hh"]
 })
 

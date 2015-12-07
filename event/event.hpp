@@ -23,6 +23,8 @@ public:
 	Event() {
 		MM_INIT();
 	}
+	
+	virtual Event* clone() = 0;
 };
 
 
@@ -38,16 +40,28 @@ public:
 	SetMovement(util::Vector2D_d _dir, si::model::Entity* e):
 		dir(_dir), entity(e) {}
 	
+	Event* clone() {
+		return new SetMovement(*this);
+	}
+	
 	util::Vector2D_d dir;
 	si::model::Entity* entity;
 };
 
 class Tick: public Event {
 	MM_CLASS(Tick, Event);
+	
+	Event* clone() {
+		return new Tick(*this);
+	}
 };
 
 class Redraw: public Event {
 	MM_CLASS(Redraw, Event);
+	
+	Event* clone() {
+		return new Redraw(*this);
+	}
 };
 
 // TODO:

@@ -13,8 +13,11 @@ dependencies["build_exec"] = [
 ]
 
 gcc_config = {
-	"post_extra": "-Wall -pthread -I libs/yomm11/include -I libs/sfml/include/"
-				+ "-Llibs/sfml/cmake_stuff/ -lsfml-graphics -lsfml-window -lsfml-system -Llibs/yomm11/cmake_stuff/src/ -lyomm11 -lX11"
+	"post_extra": "-Wall -Wl,-Bstatic -I libs/yomm11/include -I libs/sfml/include/ "
+				+ "-Llibs/sfml/cmake_stuff/lib/ -lsfml-graphics-s-d -lsfml-window-s-d -lsfml-system-s-d "
+				+ "-Llibs/yomm11/cmake_stuff/src/ -lyomm11 "
+				+ "-Wl,-Bdynamic -lX11 -lX11-xcb -lxcb -lxcb-glx -lxcb-randr -lxcb-icccm -lxcb-image -ludev -lpthread "
+				+ "-lGL -lGLEW -lfreetype -ljpeg -lsndfile -lopenal "
 }
 
 executable = "spaceinvaders"
@@ -44,7 +47,7 @@ using namespace si::controller;
 using namespace si::vc;
 using namespace si::util;
 
-constexpr int numSfmlVcs = 1;
+constexpr int numSfmlVcs = 2;
 
 int main(int argc, char** argv) {
 	// TODO catch exceptions

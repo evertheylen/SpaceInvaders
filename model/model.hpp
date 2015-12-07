@@ -17,7 +17,7 @@ dependencies["build_objects"] = [
 
 #pragma once
 
-#include <set>
+#include <vector>
 #include <memory>
 #include <string>
 #include <thread>
@@ -45,6 +45,29 @@ public:
 	std::string name;
 };
 
+class Model;
+
+
+// for use in a range-based for loop
+// TODO EntityIterator not exposing unique_ptr?
+class EntityRange {
+public:
+	using CollectionT = std::vector<std::unique_ptr<Entity>>;
+	
+	EntityRange(const Model& _model);
+	
+	typename CollectionT::const_iterator begin();
+	
+	typename CollectionT::const_iterator end();
+	
+	unsigned int size();
+	
+private:
+	const Model& model;
+};
+
+
+
 // The model.
 class Model {
 public:
@@ -57,19 +80,20 @@ public:
 	//   - tick (using the stopwatch)
 	void loop();
 	
-	std::thread* start();
+	std::vector<std::thread*> start();
 	
 	// gives a player pointer to a controller
 	Player* get_player() const;
 	
-	// Actual game state:
-	// TODO private
-	std::set<std::unique_ptr<Entity>> entities;
+	// iterate over all entities
+	EntityRange all_entities() const;
+	friend class EntityRange;
 	
 private:
+	std::vector<std::unique_ptr<Entity>> entities;
 	Player* player;
-	Game* game;
 	
+	Game* game;
 	util::Stopwatch watch;
 };
 

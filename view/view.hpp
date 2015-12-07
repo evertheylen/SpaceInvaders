@@ -10,6 +10,7 @@ dependencies["headers"] = [
 #pragma once
 
 #include <thread>
+#include <vector>
 
 #include "event/event.hpp"
 
@@ -18,9 +19,11 @@ namespace view {
 
 class View {
 public:
-	virtual std::thread* start() = 0;
+	virtual std::vector<std::thread*> start() = 0;
 	
-	virtual void handleEvent(si::Event* e) = 0;
+	virtual void wake_up() {}
+	
+	// Events are pulled from the game
 	
 	~View() {};
 };

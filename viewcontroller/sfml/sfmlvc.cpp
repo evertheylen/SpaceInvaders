@@ -9,7 +9,7 @@
 using namespace si::vc;
 
 
-std::thread* SfmlBase::start() {
+std::vector<std::thread*> SfmlBase::start() {
 	assert(handle != nullptr);
 	return handle->start();
 }
@@ -21,7 +21,8 @@ SfmlVc::SfmlVc(unsigned int width, unsigned int height):
 	window.setActive(false);
 }
 
-void SfmlVc::run_thread() {
+void SfmlVc::loop() {
+	sf::Context context;
 	if (controller != nullptr) {
 		std::cout << "SfmlVc Input loop started\n";
 		sf::Event event;
@@ -33,17 +34,18 @@ void SfmlVc::run_thread() {
 			controller->handleSfmlEvent(event);
 			if (event.type == sf::Event::Closed) {
 				std::cout << "SfmlVc got close Event\n";
-				window.close();
+				if (window.isOpen()) window.close();
 				break;
 			}
 		}
 	}
 }
 
-std::thread* SfmlVc::start() {
-	if (running_thread != nullptr) return running_thread;
-	
-	return new std::thread(&SfmlVc::run_thread, this);
+std::vector<std::thread*> SfmlVc::start() {
+	if (running_thread != nullptr) return {running_thread};
+	std::thread* t = new std::thread(&SfmlVc::loop, this);
+	running_thread = t;
+	return {t};
 }
 
 

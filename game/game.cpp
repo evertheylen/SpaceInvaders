@@ -3,7 +3,7 @@
 
 #include <cassert>
 #include <thread>
-#include <vector>
+#include <set>
 #include <memory>
 #include <utility>
 
@@ -15,9 +15,10 @@ Game::Game(const picojson::value& conf) {
 
 void Game::notifyViews(Event* e) {
 	for (auto& v: views) {
-		// TODO put in CCQ
-		v.first->handleEvent(e);
+		v.second->push(e->clone());
+		v.first->wake_up();
 	}
+	delete e;
 }
 
 void Game::notifyModel(Event* e) {
@@ -48,26 +49,27 @@ const model::Model& Game::get_model() const {
 
 
 void Game::run() {
-	std::vector<std::unique_ptr<std::thread>> threads(views.size() + controllers.size() + 1);
-	int i = 0;
+	std::set<std::thread*> threads;
+	
 	// starting happens synchronously!
 	for (controller::Controller* c: controllers) {
-		threads[i] = std::unique_ptr<std::thread>(c->start());
-		i++;
+		threads += c->start();
 	}
 	
 	for (auto& it: views) {
-		threads[i] = std::unique_ptr<std::thread>(it.first->start());
-		i++;
+		threads += it.first->start();
 	}
 	
 	// ... work is being done ...
 	// ... lots of Aliens are being murdered ...
-	threads[i] = std::unique_ptr<std::thread>(the_model.start());
+	threads += the_model.start();
 	
-	for (auto& t: threads) {
-		// join on all views/controllers
-		t->join();
+	for (std::thread* t: threads) {
+		// join on all threads
+		if (t != nullptr) {
+			t->join();
+			delete t;
+		}
 	}
 }
 
@@ -79,6 +81,14 @@ Event* Game::get_controller_event() {
 	}
 }
 
+Event* Game::get_view_event(view::View* v) {
+	util::CCQueue<Event*>* q = views[v].get();
+	if (not q->empty()) {
+		return q->pop();
+	} else {
+		return nullptr;
+	}
+}
 
 void Game::model_lock() {
 	model_mutex.lock();

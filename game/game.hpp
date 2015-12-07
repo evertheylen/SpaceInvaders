@@ -56,6 +56,9 @@ public:
 	// gives an Event* to the model when asked, could be nullptr
 	Event* get_controller_event();
 	
+	// gives an Event* sent to the corresponding view
+	Event* get_view_event(view::View* v);
+	
 	void model_lock();
 	void model_unlock();
 	
