@@ -13,10 +13,17 @@ Game::Game(const picojson::value& conf) {
 	the_model = model::Model(conf, this);
 }
 
+// TODO specialization for Tick*
 void Game::notifyViews(Event* e) {
-	for (auto& v: views) {
-		v.second->push(e->clone());
-		v.first->wake_up();
+	for (view::View* v: views) {
+		if (v->isConcurrent()) {
+			// do not broadcast ticks
+			if (dynamic_cast<Tick*>(e) != nullptr) {
+				v->handleEvent(e->clone());
+			}
+		} else {
+			v->handleEvent(e->clone());
+		}
 	}
 	delete e;
 }
@@ -27,7 +34,7 @@ void Game::notifyModel(Event* e) {
 
 
 void Game::registerView(view::View* v) {
-	views[v] = std::unique_ptr<util::CCQueue<Event*>>(new util::CCQueue<Event*>());
+	views.insert(v);
 }
 
 void Game::unregisterView(view::View* v) {
@@ -56,8 +63,8 @@ void Game::run() {
 		threads += c->start();
 	}
 	
-	for (auto& it: views) {
-		threads += it.first->start();
+	for (view::View* v: views) {
+		threads += v->start();
 	}
 	
 	// ... work is being done ...
@@ -73,6 +80,7 @@ void Game::run() {
 	}
 }
 
+
 Event* Game::get_controller_event() {
 	if (not model_queue.empty()) {
 		return model_queue.pop();
@@ -81,14 +89,6 @@ Event* Game::get_controller_event() {
 	}
 }
 
-Event* Game::get_view_event(view::View* v) {
-	util::CCQueue<Event*>* q = views[v].get();
-	if (not q->empty()) {
-		return q->pop();
-	} else {
-		return nullptr;
-	}
-}
 
 void Game::model_lock() {
 	model_mutex.lock();

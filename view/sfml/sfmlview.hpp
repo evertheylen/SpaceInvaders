@@ -25,6 +25,7 @@ dependencies["build_objects"] = [
 #include "event/event.hpp"
 #include "viewcontroller/sfml/sfmlvc.hpp"
 #include "model/entity/entity.hpp"
+#include "util/ccq/ccq.hpp"
 
 #include "sfmlresources.hpp"
 
@@ -38,24 +39,26 @@ namespace view {
 
 class SfmlView: public si::vc::SfmlBase, public View {
 public:
-	SfmlView(Game* g);
+	SfmlView(Game* g, bool _concurrent);
 	
 	std::vector<std::thread*> start();
-	
-	void wake_up();
 	
 	static void load_resources();
 	static void unload_resources();
 	
-private:
+	// called by game
 	void handleEvent(Event* e);
+	
+private:
+	void doEvent(Event* e);
 	
 	void redraw();
 	
-	void sleep();
+	util::CCQueue<Event*> queue;
+	//void sleep();
+	//void wake_up();
 	
 	void loop();
-
 	
 	Game* game;
 	
@@ -63,8 +66,7 @@ private:
 	static SfmlResources* res;
 	
 	// to go to sleep / wake up
-	// avoid spurious wake ups
-	std::atomic<bool> sleep_notified;
+	// spurious wakeups may happen, but the CCQ will be empty
 	std::mutex sleep_lock;
 	std::condition_variable sleep_cv;
 	

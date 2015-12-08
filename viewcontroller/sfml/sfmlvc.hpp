@@ -2,11 +2,13 @@
 /* [bake me]
 
 dependencies["headers"] = [
+	"viewcontroller>>headers",
 ]
 
 dependencies["build_objects"] = [
-	"controller/sfml>>headers",
-	"view/sfml>>headers",
+	"controller/sfml>>build_objects",
+	"view/sfml>>build_objects",
+	"viewcontroller>>build_objects",
 ]
 
 [stop baking] */
@@ -19,6 +21,8 @@ dependencies["build_objects"] = [
 #include <thread>
 
 #include "SFML/Graphics.hpp"
+
+#include "viewcontroller/viewcontroller.hpp"
 
 namespace si {
 
@@ -44,12 +48,13 @@ protected:
 
 
 
-class SfmlVc {
+class SfmlVc: public ViewController {
 public:
 	// SfmlVc should already be in a usable state after the constructor (obviously)
 	SfmlVc(unsigned int width=800, unsigned int height=600);
 	
 	SfmlVc(const SfmlVc& other) = delete;
+	
 	
 	void couple_controller(si::controller::SfmlController* _controller);
 	void decouple_controller();

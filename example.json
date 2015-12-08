@@ -3,12 +3,12 @@
 		{
 			"name": "level 1",
 			"players": 1,
-			"aliens": true
+			"aliens": true,
 		},
 		{
 			"name": "level 2",
-			"players": 1,
-			"aliens": true
+			"players": 4,
+			"aliens": false,
 		}
 	]
 }

@@ -19,13 +19,18 @@ namespace view {
 
 class View {
 public:
+	View(bool _concurrent): concurrent(_concurrent) {}
+	
 	virtual std::vector<std::thread*> start() = 0;
 	
-	virtual void wake_up() {}
+	virtual void handleEvent(Event* e) = 0;
 	
-	// Events are pulled from the game
+	bool isConcurrent() { return concurrent; }
 	
 	~View() {};
+	
+private:
+	bool concurrent;
 };
 
 

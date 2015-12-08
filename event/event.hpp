@@ -48,24 +48,38 @@ public:
 	si::model::Entity* entity;
 };
 
-class Tick: public Event {
-	MM_CLASS(Tick, Event);
-	
-	Event* clone() {
-		return new Tick(*this);
-	}
+
+#define SIMPLE_EVENT(name)            \
+class name: public Event {            \
+	MM_CLASS(name, Event);            \
+	                                  \
+	Event* clone() {                  \
+		return new name(*this);       \
+	}                                 \
 };
 
-class Redraw: public Event {
-	MM_CLASS(Redraw, Event);
-	
-	Event* clone() {
-		return new Redraw(*this);
-	}
-};
+
+
+SIMPLE_EVENT(Init);
+
+SIMPLE_EVENT(GameStart);
+
+SIMPLE_EVENT(Tick); // has a more special status in some contexts
+
+SIMPLE_EVENT(GameStop);
+
+SIMPLE_EVENT(Quit);
+
+// don't like macro's?
+#undef SIMPLE_EVENT
+
+// Above are all the definitions of all the possible subclasses of Event, technically.
+// However, you could argue (and this is also how I originally imagined it) that there
+// are also implicit events within the open multimethods in model. These implicit Events
+// are never instantiated, but are immediatly handled in some onFoo(Bar) function.
+// An example is: TODO
 
 // TODO:
-//  - scene change?
 //  - ...
 //  - comment about implicit events in dispatchers within model
 

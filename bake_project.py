@@ -1,8 +1,12 @@
 
 collections = ConfigDict({
     "@execs": ["exec"],
-    "@all": ["controller", "exec", "game", "model", "model/entity", "util", "view", 
-             "exceptions", "viewcontroller"]
+    "@all": ["controller", "controller/sfml",
+             "view", "view/sfml",
+             "viewcontroller", "viewcontroller/sfml",
+             "model", "model/entity",
+             "util", "util/ccq", "util/stopwatch", "util/cmd",
+             "exec", "game", "exceptions"]
 })
 
 extensions =  [".cpp", ".cc", ".hpp", ".hh", ".h", ".test"]
@@ -14,7 +18,7 @@ gcc_config = ConfigDict({
     "mode": "g3",
     "std": "c++11",
     "pre_extra": "-I libs/sfml/include/ -I libs/yomm11/include",
-    "post_extra": "-Wall -pthread ",
+    "post_extra": "-Wall -Wno-unused-value -pthread ",
     "input": ["*.cpp", "*.cc", "*.hpp", "*.h", "*.hh"]
 })
 

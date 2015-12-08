@@ -2,7 +2,8 @@
 /* [bake me]
 
 dependencies["headers"] = [
-	"util>>headers"
+	"util>>headers",
+	"util/stopwatch>>headers",
 ]
 
 [stop baking] */

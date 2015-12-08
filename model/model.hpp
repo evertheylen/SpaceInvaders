@@ -28,11 +28,19 @@ dependencies["build_objects"] = [
 #include "model/entity/entity.hpp"
 #include "util/stopwatch/stopwatch.hpp"
 
+#include "yorel/multi_methods.hpp"
+
 namespace si {
 
 class Game;
 
 namespace model {
+
+class Model;
+
+using yorel::multi_methods::virtual_;
+
+MULTI_METHOD(handle_Event, void, si::model::Model*, virtual_<si::Event>&);
 
 // A level. Basically a POD class with a fancy constructor
 class Level {
@@ -44,8 +52,6 @@ public:
 	bool aliens; // TODO :P
 	std::string name;
 };
-
-class Model;
 
 
 // for use in a range-based for loop
@@ -89,7 +95,12 @@ public:
 	EntityRange all_entities() const;
 	friend class EntityRange;
 	
+	template <typename T>
+	friend class handle_Event_specialization;
+	
 private:
+	void handleEvent(Event* e);
+	
 	std::vector<std::unique_ptr<Entity>> entities;
 	Player* player;
 	
@@ -100,3 +111,4 @@ private:
 }
 
 }
+

@@ -20,7 +20,7 @@ protected:
 };
 
 // yay macro's
-// making code shorter since 
+// making code shorter since (some time now) (insert year when C's preprocessor was first created)
 #define ADD_EXCEPTION(type, msg) \
 	class type: public SiException {\
 	public:\
@@ -32,6 +32,19 @@ protected:
 }
 
 ADD_EXCEPTION(ParseError, "Error while parsing: " + info);
+
+class CmdError: public SiException {
+public:
+	CmdError(std::string& _arg, std::string _info):
+		SiException(_info), arg(_arg) {}
+	
+	virtual const char* what() const throw() {
+		return (std::string("Error while parsing argument '") + arg + "': " + info).c_str();
+	}
+	
+private:
+	std::string arg;
+};
 
 // You don't like macro's? Fine.
 #undef ADD_EXCEPTION

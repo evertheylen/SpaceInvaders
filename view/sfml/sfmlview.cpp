@@ -6,7 +6,7 @@
 using namespace si;
 using namespace si::view;
 
-SfmlView::SfmlView(Game* g): game(g) {
+SfmlView::SfmlView(Game* g, bool _concurrent):  View(_concurrent), game(g) {
 	assert(SfmlView::res != nullptr);
 	backgroundsprite.setTextureRect(sf::IntRect(0,0,800,600));
 	backgroundsprite.setTexture(res->background);
@@ -14,7 +14,12 @@ SfmlView::SfmlView(Game* g): game(g) {
 
 std::vector<std::thread*> SfmlView::start() {
 	std::cout << "View has started\n";
-	return SfmlBase::start() + std::vector<std::thread*>{new std::thread(&SfmlView::loop, this)};
+	handle->window.setActive(false);
+	if (isConcurrent()) {
+		return SfmlBase::start() + std::vector<std::thread*>{new std::thread(&SfmlView::loop, this)};
+	} else {
+		return SfmlBase::start();
+	}
 }
 
 void SfmlView::redraw() {
@@ -25,12 +30,10 @@ void SfmlView::redraw() {
 		handle->window.draw(backgroundsprite);
 		
 		// TODO remove this, draw from the right thread
-		handle->window.setActive(true);
 		//std::cout << "Trying to draw\n";
 		
 		// initialize all sprites
-		const auto& model = game->get_model();
-		for (const auto& uniq_e: model.all_entities()) {
+		for (const auto& uniq_e: game->get_model().all_entities()) {
 			si::model::Entity* e = uniq_e.get();
 			sprites[e] = sf::Sprite();
 			//sprites[e].setTextureRect(sf::IntRect(e->x, e->y, 64, 64));
@@ -43,41 +46,61 @@ void SfmlView::redraw() {
 	}
 }
 
+/*
 // public
 void SfmlView::wake_up() {
-	std::unique_lock<std::mutex> locker(sleep_lock);
-	sleep_notified = true;
-	sleep_cv.notify_one();
+	if (isConcurrent()) {
+		std::unique_lock<std::mutex> locker(sleep_lock);
+		sleep_cv.notify_one();
+	}
 }
 
 
 // private
 void SfmlView::sleep() {
-	std::unique_lock<std::mutex> locker(sleep_lock);
-	while(not sleep_notified) {  // used to avoid spurious wakeups
+	if (isConcurrent()) {
+		std::unique_lock<std::mutex> locker(sleep_lock);
 		sleep_cv.wait(locker);
 	}
-	sleep_notified = false;
 }
-
+*/
 
 void SfmlView::handleEvent(Event* e) {
-	if (Redraw* r = dynamic_cast<Redraw*>(e)) {
-		redraw();
+	if (isConcurrent()) {
+		// no ticks are being sent if we're concurrent
+		queue.push(e);
+		//wake_up();
+	} else {
+		handle->window.setActive(true);
+		if (dynamic_cast<Tick*>(e)) {
+			redraw();
+		} else {
+			doEvent(e);
+		}
+		delete e;
 	}
 }
 
+
+void SfmlView::doEvent(Event* e) {
+	// actually performs the event
+	// no ticks
+	// TODO
+}
+
+
 void SfmlView::loop() {
-	handle->window.setActive(true);
 	while (true) {
-		std::cout << "SfmlView Awake!\n";
-		Event* e = game->get_view_event(this);
-		if (e != nullptr) {
-			redraw();
+		//std::cout << "SfmlView Awake!\n";
+		redraw(); // always 'expect' a tick
+		
+		if (not queue.empty()) {
+			Event* e = queue.pop();
+			doEvent(e);
+			delete e;
 		}
-		delete e;
 		//std::this_thread::sleep_for(std::chrono::milliseconds(1));
-		sleep();  // wake_up wakes this thread back up obv
+		//sleep();  // wake_up wakes this thread back up obv
 		
 		// TODO break out of this elegantly
 	}

@@ -7,6 +7,7 @@
 #include <cassert>
 #include <vector>
 #include <set>
+#include <string>
 
 // 'additions' to STL
 
@@ -29,6 +30,9 @@ std::set<T>& operator+=(std::set<T>& self, const std::vector<T>& other) {
 	self.insert(other.begin(), other.end());
 	return self;
 }
+
+std::vector<std::string> split(std::string& s, char delim);
+
 
 namespace si {
 namespace util {

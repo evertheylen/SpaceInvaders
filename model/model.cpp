@@ -3,8 +3,6 @@
 #include "game/game.hpp"
 #include "exceptions/exceptions.hpp"
 
-// TODO remove this!
-#include "SFML/Window.hpp"
 
 using namespace si;
 using namespace si::model;
@@ -52,8 +50,21 @@ unsigned int EntityRange::size() {
 // Model
 
 Model::Model(const picojson::value& conf, Game* g): game(g) {
+	if (conf.is<picojson::object>()) {
+		picojson::object m = conf.get<picojson::object>();
+		if (m.find("levels")->second.is<picojson::array>()) {
+			for (const auto& l: m.find("levels")->second.get<picojson::array>()) {
+				Level somelevel(l); // TODO use this :)
+			}
+		} else {
+			throw ParseError("levels should be an array");
+		}
+	} else {
+		throw ParseError("Root should be an object");
+	}
+	
 	player = new model::Player(200, 550);
-	player->mov.speed = 0.01; // TODO
+	player->mov.speed = 0.2; // TODO
 	entities.push_back(std::unique_ptr<Entity>(player));
 }
 
@@ -63,9 +74,6 @@ std::vector<std::thread*> Model::start() {
 }
 
 void Model::loop() {
-	// TODO remove
-	sf::Context ctx;
-	
 	game->model_lock();
 	util::Stopwatch::TimePoint current_tick = watch.now();
 	util::Stopwatch::TimePoint prev_tick;
@@ -79,17 +87,9 @@ void Model::loop() {
 		prev_tick = current_tick;
 		current_tick = watch.now();
 		util::Stopwatch::Duration duration = current_tick - prev_tick;
+		
 		for (const std::unique_ptr<Entity>& e: entities) {
-			// TODO movements...
-			if (changed_pos < 3) 
-				std::cout << "start player pos = " << e->pos << "\n";
-			
 			e->mov.perform(duration, e->pos);
-			
-			if (changed_pos < 3) {
-				std::cout << "end player pos = " << e->pos << "\n";
-				changed_pos++;
-			}
 		}
 		
 		// handle Events, until nullptr
@@ -99,10 +99,12 @@ void Model::loop() {
 				std::cout << "setting dir to " << m->entity->mov.dir;
 				changed_pos = 0;
 			}
+			handleEvent(e);
 		}
 		
 		// update views
-		game->notifyViews(new Redraw);
+		// Could be concurrent, could be blocking. The View is responsible for that.
+		game->notifyViews(new Tick);
 	}
 	game->model_unlock();
 }

@@ -4,6 +4,7 @@
 #include <chrono>
 
 #include "util/util.hpp"
+#include "util/stopwatch/stopwatch.hpp"
 
 namespace si {
 namespace model {
@@ -20,7 +21,11 @@ public:
 	template <typename durationT>
 	void perform(durationT duration, util::Vector2D_d& vec) {
 		if (dir.length() != 0) {
-			vec += (dir * (speed*std::chrono::duration_cast<std::chrono::microseconds>(duration).count()));
+			//std::cout << typeid(duration).name() << ": " << duration.count() << "\n";
+			auto d_count = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(duration).count();
+			auto distance = speed*d_count;
+			auto mov_vec = dir*distance;
+			vec += mov_vec;
 		}
 	}
 	

@@ -56,9 +56,6 @@ public:
 	// gives an Event* to the model when asked, could be nullptr
 	Event* get_controller_event();
 	
-	// gives an Event* sent to the corresponding view
-	Event* get_view_event(view::View* v);
-	
 	void model_lock();
 	void model_unlock();
 	
@@ -74,8 +71,8 @@ private:
 	// controllers
 	std::set<controller::Controller*> controllers;
 	
-	// views, each one has a CCQ
-	std::map<view::View*, std::unique_ptr<util::CCQueue<Event*>>> views;
+	// views, each one could have a CCQ
+	std::set<view::View*> views;
 };
 
 }

@@ -17,7 +17,7 @@ std::vector<std::thread*> SfmlBase::start() {
 
 SfmlVc::SfmlVc(unsigned int width, unsigned int height):
 		window(sf::VideoMode(width, height), "Space Invaders") {
-	// drawing is done from another thread, not this one, so disable it
+	// drawing could be done from another thread, so disable the window
 	window.setActive(false);
 }
 
