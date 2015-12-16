@@ -1,0 +1,20 @@
+# -*- compile-command: "bjam" -*-
+
+project multi-methods/doc ;
+import boostbook : boostbook ;
+using quickbook ;
+using doxygen ;
+
+path-constant images_location : html ;
+
+boostbook quickbook
+    :
+        multi_methods.qbk
+    :
+        <xsl:param>chunk.first.sections=1
+        <xsl:param>chunk.section.depth=4
+        <xsl:param>toc.section.depth=3
+        <xsl:param>toc.max.depth=3
+        #<xsl:param>nav.layout=none
+        <xsl:param>boost.defaults=none
+    ;

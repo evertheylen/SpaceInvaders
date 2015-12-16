@@ -1,0 +1,31 @@
+[section Installation]
+
+The library is available from [@https://github.com/jll63/yomm11
+GitHub].
+
+The library is entirely self-contained; all you need is a C++11
+capable compiler and optionally cmake.
+
+The library consists in a static archive - libyomm11.a - and a set of
+header files.
+
+Run the following commands:
+
+   cmake
+   make
+   make test
+   make install
+
+These will build, test and install libyomm11.a and the header files in
+the default locations. You can override this by passing
+`-DCMAKE_INSTALL_PREFIX=<dir>` to cmake. The default compiler is
+g++. Pass `-DCMAKE_CXX_COMPILER=clang++` if you want to use Clang.
+
+Alternatively, you can add the library's `include` directory to the
+include path and compile and link `src/methods.cpp` directly
+into your application.
+
+Read [link methods.advanced_topics.dynamic_linking this section]
+if you intend to use shared libraries or dynamic linking.
+
+[endsect]

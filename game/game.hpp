@@ -7,6 +7,7 @@ dependencies["headers"] = [
 	"view>>headers",
 	"model>>headers",
 	"util/ccq>>headers",
+	"util/rwlock>>headers",
 ]
 
 [stop baking] */
@@ -24,6 +25,7 @@ dependencies["headers"] = [
 #include "controller/controller.hpp"
 #include "model/model.hpp"
 #include "util/ccq/ccq.hpp"
+#include "util/rwlock/rwlock.hpp"
 
 namespace si {
 
@@ -56,15 +58,23 @@ public:
 	// gives an Event* to the model when asked, could be nullptr
 	Event* get_controller_event();
 	
+	// --- avoiding race conditions ---
 	void model_lock();
 	void model_unlock();
+	
+	
+	// RWLock for the entities (TODO private?)
+	RWLock entity_lock;
+	
 	
 private:
 	
 	// the model, also contains a stopwatch
 	model::Model the_model;
+	
 	// CCQ for the model
 	util::CCQueue<Event*> model_queue;
+	
 	// mutex for the model
 	std::mutex model_mutex;
 	

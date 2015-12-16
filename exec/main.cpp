@@ -12,10 +12,14 @@ dependencies["build_exec"] = [
 	# not mentioning sfml, CMake takes too long to actually realize it doesn't have to do anything
 ]
 
+# SFML instructions:
+# in libs/sfml/cmake_stuff/, execute:
+#   cmake .. -DBUILD_SHARED_LIBS=OFF
+
 gcc_config = {
 	"post_extra": "-Wall -Wno-unused-value -Wl,-Bstatic -I libs/yomm11/include -I libs/sfml/include/ "
-				+ "-Llibs/sfml/cmake_stuff/lib/ -lsfml-graphics-s-d -lsfml-window-s-d -lsfml-system-s-d "
 				+ "-Llibs/yomm11/cmake_stuff/src/ -lyomm11 "
+				+ "-Llibs/sfml/cmake_stuff/lib/ -lsfml-graphics-s -lsfml-window-s -lsfml-system-s "
 				+ "-Wl,-Bdynamic -lX11 -lX11-xcb -lxcb -lxcb-glx -lxcb-randr -lxcb-icccm -lxcb-image -ludev -lpthread "
 				+ "-lGL -lGLEW -lfreetype -ljpeg -lsndfile -lopenal "
 }

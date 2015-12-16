@@ -1,0 +1,40 @@
+[/ -*- compile-command: "bjam" -*-; auto-fill-mode: t /]
+[/==============================================================================
+Copyright Jean-Louis Leroy 2013.
+Use, modification, and distribution are subject to the Boost Software License, Version 1.0.
+===============================================================================/]
+[article Multi-methods
+    [quickbook 1.5]
+    [id methods]
+    [version 1.0]
+    [authors [Leroy, Jean-Louis]]
+    [copyright 2013 Jean-Louis Leroy]
+    [license
+        Distributed under the Boost Software License, Version 1.0.
+        (See accompanying file LICENSE_1_0.txt or copy at
+        [@http://www.boost.org/LICENSE_1_0.txt])]]
+
+Support: [@https://groups.google.com/forum/#!forum/yomm11 YOMM11 on Google Groups]
+
+[include intro.qbk]
+
+[include installation.qbk]
+
+[include tutorial.qbk]
+
+[include advanced_topics.qbk]
+
+[include reference.qbk]
+
+[section Acknowledgements]
+
+This library is strongly inspired by Pirkelbauer, Solodkyy and
+Stroustrup's paper [@http://www.stroustrup.com/multimethods.pdf "Open Multi-Methods for C++"].
+
+The paper [@http://hal.inria.fr/docs/00/07/37/21/PDF/RR-2977.pdf
+"Fast algorithms for compressed multi-method dispatch tables
+generation"] by Amiel, Dujardin and Simon was influential in the design
+of the algorithm for dispatch table generation.
+
+[endsect]
+

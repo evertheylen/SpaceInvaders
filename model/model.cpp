@@ -84,6 +84,7 @@ void Model::loop() {
 		// TODO handle exit --> break
 		
 		// tick
+		game->entity_lock.write_lock();
 		prev_tick = current_tick;
 		current_tick = watch.now();
 		util::Stopwatch::Duration duration = current_tick - prev_tick;
@@ -101,6 +102,7 @@ void Model::loop() {
 			}
 			handleEvent(e);
 		}
+		game->entity_lock.write_unlock();
 		
 		// update views
 		// Could be concurrent, could be blocking. The View is responsible for that.

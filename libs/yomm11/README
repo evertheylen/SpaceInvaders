@@ -1,0 +1,36 @@
+This library implements open multi-methods for C++11.
+
+Salient features are:
+
+* syntax: is relatively uncluttered. There are no limitations on the
+  number of virtual arguments. Virtual and non-virtual arguments can
+  be arbitrarily mixed. Virtual and multiple inheritance are
+  supported.
+
+* speed: close to a virtual function call when the hierarchies
+  involved in the virtual arguments collaborate with the
+  library. Calling a method that does nothing, with a single virtual
+  argument in a single inheritance hierarchy is 33% slower than the
+  equivalent virtual function call. The difference becomes
+  unnoticeable if the functions perform a few simple maths
+  operations. See tests/benchmarks.cpp.
+
+* size: dispatch tables are constructed in terms of class groups. This
+  results in a tables devoid of redundancies.
+
+* support for "foreign" class hierarchies: the library can be used
+  without modifications to existing classes, at the cost of lower
+  performance. Collaborating and foreign arguments can be freely
+  mixed. Performance is still quite good, see the benchmarks.
+
+* next: a pointer to the next most specialized method is available
+  inside method specializations - see examples/next.cpp.
+  Alternatively, it is possible to call a specialization directly.
+
+Documentation: http://www.yorel.be/mm/ - see also the articles on Code
+Project http://tinyurl.com/m8kg2y3
+
+Support and discussions: yomm11 on Google Groups
+(https://groups.google.com/forum/#!forum/yomm11)
+
+Author: Jean-Louis Leroy - jl@yorel.be

@@ -1,7 +1,7 @@
 
-#include "SFML/Graphics.hpp"
-
 #include <cassert>
+
+#include "SFML/Graphics.hpp"
 
 #pragma once
 

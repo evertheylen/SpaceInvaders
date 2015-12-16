@@ -1,0 +1,61 @@
+[/ -*- compile-command: "bjam" -*-; auto-fill-mode: t /]
+
+[section Reference]
+
+[def __name__ [~name]]
+[def __return_type__ [~return_type]]
+[def __args__ [~args]]
+[def __arg__ [~arg]]
+[def __class__ [~class]]
+[def __base__ [~base]]
+[def __bases__ [~bases]]
+[def __class_template__ [~class_template]]
+[def __specialization__ [~specialization]]
+[def __mm__ [~multi_method]]
+
+[def __selector__ [link methods.reference.registering_classes.selector `selector`]]
+[def __MM_CLASS_MULTI__ [link methods.reference.registering_classes.mm_class_multi `MM_CLASS_MULTI`]]
+[def __MM_CLASS__ [link methods.reference.registering_classes.mm_class `MM_CLASS`]]
+[def __MM_FOREIGN_CLASS__ [link methods.reference.registering_classes.mm_foreign_class `MM_FOREIGN_CLASS`]]
+[def __MM_INIT__ [link methods.reference.registering_classes.mm_init `MM_INIT`]]
+
+[def __virtual___ [link methods.reference.declaring_methods.virtual_ `virtual_`]]
+[def __MULTI_METHOD_MACRO__ [link methods.reference.declaring_methods.multi_method_macro `MULTI_METHOD_MACRO`]]
+[def __multi_method__ [link methods.reference.declaring_methods.multi_method `multi_method`]]
+[def __multi_method_specialize__ [link methods.reference.specializing.multi_method_specialize `multi_method::specialize`]]
+
+[def __initialize__ [link methods.reference.calling.initialize `initialize`]]
+[def __multi_method_operator_call__ [link methods.reference.calling.multi_method_operator_call `multi_method::operator ()`]]
+[def __undefined__ [link methods.reference.calling.undefined  `undefined`]]
+[def __ambiguous__ [link methods.reference.calling.ambiguous  `ambiguous`]]
+
+[import reference_examples.cpp]
+
+[section Registering classes]
+[include selector.qbk]
+[include MM_CLASS.qbk]
+[include MM_CLASS_MULTI.qbk]
+[include MM_FOREIGN_CLASS.qbk]
+[include MM_INIT.qbk]
+[endsect]
+
+[section Declaring multi-methods]
+[include MULTI_METHOD_MACRO.qbk]
+[include virtual_.qbk]
+[include multi_method.qbk]
+[endsect]
+
+[section Specializing]
+[include BEGIN_SPECIALIZATION_END_SPECIALIZATION.qbk]
+[include multi_method_specialize.qbk]
+[endsect]
+
+[section Calling]
+[include initialize.qbk]
+[include multi_method_operator_call.qbk]
+[include next.qbk]
+[include undefined.qbk]
+[include ambiguous.qbk]
+[endsect]
+
+[endsect]

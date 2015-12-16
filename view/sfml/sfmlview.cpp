@@ -24,25 +24,28 @@ std::vector<std::thread*> SfmlView::start() {
 
 void SfmlView::redraw() {
 	//sf::Context context;
-	if (handle->window.isOpen()) {
-		handle->window.clear();
-		
-		handle->window.draw(backgroundsprite);
-		
-		// TODO remove this, draw from the right thread
-		//std::cout << "Trying to draw\n";
-		
-		// initialize all sprites
-		for (const auto& uniq_e: game->get_model().all_entities()) {
-			si::model::Entity* e = uniq_e.get();
-			sprites[e] = sf::Sprite();
-			//sprites[e].setTextureRect(sf::IntRect(e->x, e->y, 64, 64));
-			sprites[e].setTexture(SfmlView::res->player);
-			sprites[e].setPosition(e->pos.x, e->pos.y);
-			handle->window.draw(sprites[e]);
+	if (game->entity_lock.read_lock()) {
+		if (handle->window.isOpen()) {
+			handle->window.clear();
+			
+			handle->window.draw(backgroundsprite);
+			
+			// TODO remove this, draw from the right thread
+			//std::cout << "Trying to draw\n";
+			
+			// initialize all sprites
+			for (const auto& uniq_e: game->get_model().all_entities()) {
+				si::model::Entity* e = uniq_e.get();
+				sprites[e] = sf::Sprite();
+				//sprites[e].setTextureRect(sf::IntRect(e->x, e->y, 64, 64));
+				sprites[e].setTexture(SfmlView::res->player);
+				sprites[e].setPosition(e->pos.x, e->pos.y);
+				handle->window.draw(sprites[e]);
+			}
+			
+			handle->window.display();
 		}
-		
-		handle->window.display();
+		game->entity_lock.read_unlock();
 	}
 }
 
