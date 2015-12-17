@@ -13,17 +13,21 @@ Game::Game(const picojson::value& conf) {
 	the_model = model::Model(conf, this);
 }
 
-// TODO specialization for Tick*
 void Game::notifyViews(Event* e) {
 	for (view::View* v: views) {
 		if (v->isConcurrent()) {
-			// do not broadcast ticks
-			if (dynamic_cast<Tick*>(e) != nullptr) {
-				v->handleEvent(e->clone());
-			}
+			assert(dynamic_cast<Tick*>(e) == nullptr);
+			v->handleEvent(e->clone());
 		} else {
 			v->handleEvent(e->clone());
 		}
+	}
+	delete e;
+}
+
+void Game::notifyViews(Tick* e) {
+	for (view::View* v: synchr_views) {
+		v->handleEvent(e->clone());
 	}
 	delete e;
 }
@@ -35,6 +39,9 @@ void Game::notifyModel(Event* e) {
 
 void Game::registerView(view::View* v) {
 	views.insert(v);
+	if (not v->isConcurrent()) {
+		synchr_views.insert(v);
+	}
 }
 
 void Game::unregisterView(view::View* v) {
@@ -67,9 +74,14 @@ void Game::run() {
 		threads += v->start();
 	}
 	
+	// Now that all views / controllers are running, give them an extra Init event
+	// to initialize whatever they want...
+	notifyViews(new Init);
+	
 	// ... work is being done ...
 	// ... lots of Aliens are being murdered ...
 	threads += the_model.start();
+	
 	
 	for (std::thread* t: threads) {
 		// join on all threads

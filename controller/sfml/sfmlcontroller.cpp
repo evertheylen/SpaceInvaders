@@ -30,7 +30,6 @@ void SfmlController::handleSfmlEvent(sf::Event& e) {
 		case sf::Event::KeyPressed:
 			switch(e.key.code) {
 				case sf::Keyboard::Left:
-					// TODO memory leaks
 					game->notifyModel(new SetMovement(util::WEST, my_player));
 					break;
 				case sf::Keyboard::Right:

@@ -1,14 +1,19 @@
 {
+	"max_players": 4,
 	"levels": [
 		{
 			"name": "level 1",
-			"players": 1,
-			"aliens": true,
+			"alien_rows": 4,
+			"alien_cols": 10,
+			"width": 800,
+			"height": 600,
 		},
 		{
 			"name": "level 2",
-			"players": 4,
-			"aliens": false,
-		}
+			"alien_rows": 4,
+			"alien_cols": 10,
+			"width": 800,
+			"height": 600,
+		},
 	]
 }

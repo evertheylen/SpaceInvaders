@@ -49,6 +49,7 @@ public:
 	// --- communication between M/V/C ---
 	// Model --> Views
 	void notifyViews(Event* e);
+	void notifyViews(Tick* e);
 	// Controllers --> Model
 	void notifyModel(Event* e);
 	
@@ -81,8 +82,9 @@ private:
 	// controllers
 	std::set<controller::Controller*> controllers;
 	
-	// views, each one could have a CCQ
+	// views, each one *could* have a CCQ
 	std::set<view::View*> views;
+	std::set<view::View*> synchr_views; // subset containing synchronous views
 };
 
 }

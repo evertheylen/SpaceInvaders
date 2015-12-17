@@ -38,7 +38,11 @@ void SfmlView::redraw() {
 				si::model::Entity* e = uniq_e.get();
 				sprites[e] = sf::Sprite();
 				//sprites[e].setTextureRect(sf::IntRect(e->x, e->y, 64, 64));
-				sprites[e].setTexture(SfmlView::res->player);
+				if (dynamic_cast<si::model::Player*>(e)) {
+					sprites[e].setTexture(SfmlView::res->player);
+				} else {
+					sprites[e].setTexture(SfmlView::res->big_alien);
+				}
 				sprites[e].setPosition(e->pos.x, e->pos.y);
 				handle->window.draw(sprites[e]);
 			}
@@ -74,21 +78,14 @@ void SfmlView::handleEvent(Event* e) {
 		queue.push(e);
 		//wake_up();
 	} else {
-		handle->window.setActive(true);
 		if (dynamic_cast<Tick*>(e)) {
 			redraw();
 		} else {
-			doEvent(e);
+			// dispatch the event!
+			_handleEvent(this, *e);
 		}
 		delete e;
 	}
-}
-
-
-void SfmlView::doEvent(Event* e) {
-	// actually performs the event
-	// no ticks
-	// TODO
 }
 
 
@@ -99,7 +96,7 @@ void SfmlView::loop() {
 		
 		if (not queue.empty()) {
 			Event* e = queue.pop();
-			doEvent(e);
+			_handleEvent(this, *e);
 			delete e;
 		}
 		//std::this_thread::sleep_for(std::chrono::milliseconds(1));

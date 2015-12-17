@@ -36,6 +36,12 @@ class Game;
 
 namespace view {
 
+class SfmlView;
+
+// Multimethods stuff
+using yorel::multi_methods::virtual_;
+MULTI_METHOD(_handleEvent, void, si::view::SfmlView*, virtual_<si::Event>&);
+
 
 class SfmlView: public si::vc::SfmlBase, public View {
 public:
@@ -47,11 +53,14 @@ public:
 	static void unload_resources();
 	
 	// called by game
+	// may dispatch the events to the functions in mm_sfmlview.cpp
 	void handleEvent(Event* e);
 	
-private:
-	void doEvent(Event* e);
+	// make sure all the handlers can actually access this class
+	template <typename T>
+	friend class _handleEvent_specialization;
 	
+private:
 	void redraw();
 	
 	util::CCQueue<Event*> queue;
@@ -67,8 +76,8 @@ private:
 	
 	// to go to sleep / wake up
 	// spurious wakeups may happen, but the CCQ will be empty
-	std::mutex sleep_lock;
-	std::condition_variable sleep_cv;
+	//std::mutex sleep_lock;
+	//std::condition_variable sleep_cv;
 	
 	// keeps track of all the objects on screen, and their respective entities
 	std::map<si::model::Entity*, sf::Sprite> sprites;

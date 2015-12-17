@@ -6,6 +6,7 @@ dependencies["headers"] = [
 	"event>>headers",
 	"model/entity>>headers",
 	"util/stopwatch>>headers",
+	"util/parser>>headers",
 ]
 
 dependencies["build_objects"] = [
@@ -21,14 +22,16 @@ dependencies["build_objects"] = [
 #include <memory>
 #include <string>
 #include <thread>
+#include <set>
+#include <atomic>
 
 #include "libs/picojson.hpp"
+#include "yorel/multi_methods.hpp"
 
 #include "event/event.hpp"
 #include "model/entity/entity.hpp"
 #include "util/stopwatch/stopwatch.hpp"
-
-#include "yorel/multi_methods.hpp"
+#include "util/parser/parser.hpp"
 
 namespace si {
 
@@ -38,19 +41,21 @@ namespace model {
 
 class Model;
 
+// Multimethods stuff
 using yorel::multi_methods::virtual_;
-
-MULTI_METHOD(handle_Event, void, si::model::Model*, virtual_<si::Event>&);
+MULTI_METHOD(_handleEvent, void, si::model::Model*, virtual_<si::Event>&);
 
 // A level. Basically a POD class with a fancy constructor
 class Level {
 public:
 	Level() = default;
-	Level(const picojson::value& conf);
+	Level(const picojson::object& conf);
 	
-	unsigned int players;
-	bool aliens; // TODO :P
 	std::string name;
+	unsigned int width;
+	unsigned int height;
+	unsigned int alien_rows;
+	unsigned int alien_cols;
 };
 
 
@@ -95,14 +100,22 @@ public:
 	EntityRange all_entities() const;
 	friend class EntityRange;
 	
+	// make sure all the handlers can actually access this class
 	template <typename T>
-	friend class handle_Event_specialization;
+	friend class _handleEvent_specialization;
 	
 private:
 	void handleEvent(Event* e);
 	
+	// Actual gameplay stuff
+	unsigned int max_players;
+	std::vector<Level> levels;
 	std::vector<std::unique_ptr<Entity>> entities;
-	Player* player;
+	std::vector<Player*> players;
+	
+	// Important data about the game
+	// May be accessed by anyone
+	std::atomic<std::set<unsigned int>> leftover_players;
 	
 	Game* game;
 	util::Stopwatch watch;

@@ -33,6 +33,13 @@ protected:
 
 ADD_EXCEPTION(ParseError, "Error while parsing: " + info);
 
+template <typename T>
+void true_or_throw(bool cond, std::string msg = "") {
+	if (not cond) {
+		throw T(msg);
+	}
+}
+
 class CmdError: public SiException {
 public:
 	CmdError(std::string& _arg, std::string _info):
