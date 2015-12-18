@@ -47,14 +47,17 @@ public:
 	
 	
 	// --- communication between M/V/C ---
-	// Model --> Views
+	void notifyControllers(Event* e);
 	void notifyViews(Event* e);
-	void notifyViews(Tick* e);
-	// Controllers --> Model
+	void notifyViews(Tick* e); // simple optimization (Tick is subclass of Event)
 	void notifyModel(Event* e);
 	
-	// so the view can get info about the model if needed
+	// get (const!) info about the model if needed
 	const model::Model& get_model() const;
+	
+	// so the controller can get a player (ID)
+	// result < 0 ==> there is no player available
+	int get_player();
 	
 	// gives an Event* to the model when asked, could be nullptr
 	Event* get_controller_event();
@@ -62,7 +65,6 @@ public:
 	// --- avoiding race conditions ---
 	void model_lock();
 	void model_unlock();
-	
 	
 	// RWLock for the entities (TODO private?)
 	RWLock entity_lock;

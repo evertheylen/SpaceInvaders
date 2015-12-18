@@ -13,6 +13,13 @@ Game::Game(const picojson::value& conf) {
 	the_model = model::Model(conf, this);
 }
 
+void Game::notifyControllers(Event* e) {
+	for (controller::Controller* c: controllers) {
+		c->handleEvent(e);
+	}
+}
+
+
 void Game::notifyViews(Event* e) {
 	for (view::View* v: views) {
 		if (v->isConcurrent()) {
@@ -60,28 +67,39 @@ const model::Model& Game::get_model() const {
 	return the_model;
 }
 
+int Game::get_player() {
+	model_lock();
+	for (unsigned int i: the_model.leftover_players) {
+		the_model.leftover_players.erase(i);
+		model_unlock();
+		return i;
+	}
+	model_unlock();
+	return -1;
+}
 
 
 void Game::run() {
 	std::set<std::thread*> threads;
 	
 	// starting happens synchronously!
-	for (controller::Controller* c: controllers) {
-		threads += c->start();
-	}
-	
 	for (view::View* v: views) {
 		threads += v->start();
+	}
+	
+	for (controller::Controller* c: controllers) {
+		threads += c->start();
 	}
 	
 	// Now that all views / controllers are running, give them an extra Init event
 	// to initialize whatever they want...
 	notifyViews(new Init);
+	notifyControllers(new Init);
 	
+	std::set<std::thread*> model_threads;
+	model_threads += the_model.start();
 	// ... work is being done ...
 	// ... lots of Aliens are being murdered ...
-	threads += the_model.start();
-	
 	
 	for (std::thread* t: threads) {
 		// join on all threads
@@ -90,6 +108,19 @@ void Game::run() {
 			delete t;
 		}
 	}
+	
+	std::cout << "Waiting for model to stop...\n";
+	
+	// all views / controllers are done
+	// signal to the model it should quit
+	notifyModel(new si::VCStop);
+	for (std::thread* t: model_threads) {
+		if (t != nullptr) {
+			t->join();
+			delete t;
+		}
+	}
+	
 }
 
 

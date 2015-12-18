@@ -23,14 +23,12 @@ namespace model {
 class Entity: public yorel::multi_methods::selector {
 public:
 	MM_CLASS(Entity);
-		
-	Entity() {
-		MM_INIT();
-	}
 	
 	Entity(double _x, double _y): pos(_x, _y) {
 		MM_INIT();
 	}
+	
+	Entity(const Entity& e) = delete;  // so the compiler warns me about copies (don't contain MM_INIT yet)
 	
 	virtual ~Entity() {}
 	
@@ -41,14 +39,22 @@ public:
 
 
 class Player: public Entity {
+public:
 	MM_CLASS(Player, Entity);
-	using Entity::Entity;
+	
+	Player(double _x, double _y): Entity(_x, _y) {
+		MM_INIT();
+	}
 };
 
 
 class Alien: public Entity {
+public:
 	MM_CLASS(Alien, Entity);
-	using Entity::Entity;
+	
+	Alien(double _x, double _y): Entity(_x, _y) {
+		MM_INIT();
+	}
 };
 
 

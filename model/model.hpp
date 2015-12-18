@@ -33,6 +33,8 @@ dependencies["build_objects"] = [
 #include "util/stopwatch/stopwatch.hpp"
 #include "util/parser/parser.hpp"
 
+#include "model_state.hpp"
+
 namespace si {
 
 class Game;
@@ -60,10 +62,9 @@ public:
 
 
 // for use in a range-based for loop
-// TODO EntityIterator not exposing unique_ptr?
 class EntityRange {
 public:
-	using CollectionT = std::vector<std::unique_ptr<Entity>>;
+	using CollectionT = std::set<Entity*>;
 	
 	EntityRange(const Model& _model);
 	
@@ -93,9 +94,6 @@ public:
 	
 	std::vector<std::thread*> start();
 	
-	// gives a player pointer to a controller
-	Player* get_player() const;
-	
 	// iterate over all entities
 	EntityRange all_entities() const;
 	friend class EntityRange;
@@ -104,18 +102,31 @@ public:
 	template <typename T>
 	friend class _handleEvent_specialization;
 	
+	// Important data about the game
+	// May be accessed by anyone
+	std::set<unsigned int> leftover_players;
+	
+	State get_state() const { return state; }
+	
 private:
 	void handleEvent(Event* e);
+	
+	void loadLevel(Level& l);
+	void unloadLevel();
 	
 	// Actual gameplay stuff
 	unsigned int max_players;
 	std::vector<Level> levels;
-	std::vector<std::unique_ptr<Entity>> entities;
-	std::vector<Player*> players;
+	int current_level = -1;
+	std::set<Entity*> entities;
+	std::set<Entity*> saved_entities;
+	std::map<unsigned int, std::unique_ptr<Player>> players;
+	bool victory = false;
 	
-	// Important data about the game
-	// May be accessed by anyone
-	std::atomic<std::set<unsigned int>> leftover_players;
+	void Playing();
+	void Wait();
+	void Recap();
+	State state = WAIT;
 	
 	Game* game;
 	util::Stopwatch watch;

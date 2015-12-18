@@ -19,7 +19,7 @@ dependencies["build_exec"] = [
 gcc_config = {
 	"post_extra": "-Wall -Wno-unused-value -Wl,-Bstatic -I libs/yomm11/include -I libs/sfml/include/ "
 				+ "-Llibs/yomm11/cmake_stuff/src/ -lyomm11 "
-				+ "-Llibs/sfml/cmake_stuff/lib/ -lsfml-graphics-s -lsfml-window-s -lsfml-system-s "
+				+ "-Llibs/sfml/cmake_stuff/lib/ -lsfml-graphics-s-d -lsfml-window-s-d -lsfml-system-s-d "
 				+ "-Wl,-Bdynamic -lX11 -lX11-xcb -lxcb -lxcb-glx -lxcb-randr -lxcb-icccm -lxcb-image -ludev -lpthread "
 				+ "-lGL -lGLEW -lfreetype -ljpeg -lsndfile -lopenal "
 }
@@ -68,14 +68,10 @@ int main(int argc, char** argv) {
 	if (arguments.size() <= 1) {
 		cmd.help();
 	} else {
-		// ----- Init some stuff -----
 		// Initialize awesome multimethods library!
 		yorel::multi_methods::initialize();
 		// multithreaded X11 stuff!
 		XInitThreads();
-		// Load resources for SFML
-		// TODO check for SFML VC's first?
-		SfmlView::load_resources();
 		
 		std::ifstream file;
 		file.open(arguments[0].c_str());
@@ -96,10 +92,7 @@ int main(int argc, char** argv) {
 		for (auto& v: r.views) g.registerView(v.get());
 		for (auto& c: r.controllers) g.registerController(c.get());
 		
-		g.run(); // runs until all views/controllers are done
-		
-		// cleanup:
-		SfmlView::unload_resources();
+		g.run(); // runs until all views/controllers are done, then asks model to stop
 	}
 	
 	return 0;

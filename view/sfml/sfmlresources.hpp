@@ -17,17 +17,17 @@ public:
 		assert(medium_alien.loadFromFile("data/textures/medium.png"));
 		assert(big_alien.loadFromFile("data/textures/big.png"));
 		
-		assert(background.loadFromFile("data/textures/background.png"));
+		assert(font.loadFromFile("data/fonts/roboto.ttf"));
 		
-		loaded = true;
+		assert(background.loadFromFile("data/textures/background.png"));
 	}
-	
-	bool loaded = false;
 	
 	sf::Texture player;
 	sf::Texture small_alien;
 	sf::Texture medium_alien;
 	sf::Texture big_alien;
+	
+	sf::Font font;
 	
 	sf::Texture background;
 };

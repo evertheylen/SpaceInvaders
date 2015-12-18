@@ -7,9 +7,8 @@ using namespace si;
 using namespace si::view;
 
 SfmlView::SfmlView(Game* g, bool _concurrent):  View(_concurrent), game(g) {
-	assert(SfmlView::res != nullptr);
 	backgroundsprite.setTextureRect(sf::IntRect(0,0,800,600));
-	backgroundsprite.setTexture(res->background);
+	backgroundsprite.setTexture(res.background);
 }
 
 std::vector<std::thread*> SfmlView::start() {
@@ -25,52 +24,24 @@ std::vector<std::thread*> SfmlView::start() {
 void SfmlView::redraw() {
 	//sf::Context context;
 	if (game->entity_lock.read_lock()) {
-		if (handle->window.isOpen()) {
-			handle->window.clear();
-			
-			handle->window.draw(backgroundsprite);
-			
-			// TODO remove this, draw from the right thread
-			//std::cout << "Trying to draw\n";
-			
-			// initialize all sprites
-			for (const auto& uniq_e: game->get_model().all_entities()) {
-				si::model::Entity* e = uniq_e.get();
-				sprites[e] = sf::Sprite();
-				//sprites[e].setTextureRect(sf::IntRect(e->x, e->y, 64, 64));
-				if (dynamic_cast<si::model::Player*>(e)) {
-					sprites[e].setTexture(SfmlView::res->player);
-				} else {
-					sprites[e].setTexture(SfmlView::res->big_alien);
-				}
-				sprites[e].setPosition(e->pos.x, e->pos.y);
-				handle->window.draw(sprites[e]);
+		handle->window.draw(backgroundsprite);
+		
+		// initialize all sprites
+		for (const auto& e: game->get_model().all_entities()) {
+			sprites[e] = sf::Sprite();
+			//sprites[e].setTextureRect(sf::IntRect(e->x, e->y, 64, 64));
+			// TODO replace with yomm
+			if (dynamic_cast<si::model::Player*>(e)) {
+				sprites[e].setTexture(res.player);
+			} else {
+				sprites[e].setTexture(res.big_alien);
 			}
-			
-			handle->window.display();
+			sprites[e].setPosition(e->pos.x, e->pos.y);
+			handle->window.draw(sprites[e]);
 		}
 		game->entity_lock.read_unlock();
 	}
 }
-
-/*
-// public
-void SfmlView::wake_up() {
-	if (isConcurrent()) {
-		std::unique_lock<std::mutex> locker(sleep_lock);
-		sleep_cv.notify_one();
-	}
-}
-
-
-// private
-void SfmlView::sleep() {
-	if (isConcurrent()) {
-		std::unique_lock<std::mutex> locker(sleep_lock);
-		sleep_cv.wait(locker);
-	}
-}
-*/
 
 void SfmlView::handleEvent(Event* e) {
 	if (isConcurrent()) {
@@ -78,46 +49,30 @@ void SfmlView::handleEvent(Event* e) {
 		queue.push(e);
 		//wake_up();
 	} else {
-		if (dynamic_cast<Tick*>(e)) {
-			redraw();
-		} else {
-			// dispatch the event!
-			_handleEvent(this, *e);
-		}
+		handle->window.setActive(true);  // TODO make this more elegant
+		_handleEvent(this, *e);
+		if (state == model::PLAYING) handle->window.display();
 		delete e;
+		if (state != model::EXIT) handle->window.setActive(false);
 	}
 }
 
 
 void SfmlView::loop() {
 	while (true) {
-		//std::cout << "SfmlView Awake!\n";
-		redraw(); // always 'expect' a tick
+		if (state == model::PLAYING) {
+			handle->window.clear();
+			redraw(); // always 'expect' a tick
+		}
 		
 		if (not queue.empty()) {
 			Event* e = queue.pop();
 			_handleEvent(this, *e);
 			delete e;
 		}
-		//std::this_thread::sleep_for(std::chrono::milliseconds(1));
-		//sleep();  // wake_up wakes this thread back up obv
-		
-		// TODO break out of this elegantly
+		if (state == model::EXIT) return;
+		if (state == model::PLAYING) handle->window.display();
 	}
 }
 
-
-// ---- STATICS ----
-
-// definition...
-SfmlResources* SfmlView::res = nullptr;
-
-void SfmlView::load_resources() {
-	res = new SfmlResources;
-}
-
-void SfmlView::unload_resources() {
-	delete res;
-	res = nullptr;
-}
 

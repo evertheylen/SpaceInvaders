@@ -1,5 +1,5 @@
 {
-	"max_players": 4,
+	"max_players": 50,
 	"levels": [
 		{
 			"name": "level 1",

@@ -22,20 +22,27 @@ SfmlVc::SfmlVc(unsigned int width, unsigned int height):
 }
 
 void SfmlVc::loop() {
-	sf::Context context;
+	std::cout << "SfmlVc Input loop started\n";
 	if (controller != nullptr) {
-		std::cout << "SfmlVc Input loop started\n";
-		sf::Event event;
-
-		// TODO segfault?
-		while (window.isOpen() and window.waitEvent(event)) {
-			// SFML likes blocking so we do too
-			std::cout << "SfmlVc got event\n";
-			controller->handleSfmlEvent(event);
-			if (event.type == sf::Event::Closed) {
+		sf::Event e;
+		while (window.isOpen() and window.waitEvent(e)) {
+			if (e.type == sf::Event::Closed) {
 				std::cout << "SfmlVc got close Event\n";
-				if (window.isOpen()) window.close();
-				break;
+				controller->handleEvent(new si::SfmlExit);
+				return;
+			} else {
+				controller->handleEvent(new si::SfmlInput(e));
+			}
+		}
+	} else {
+		view->state = si::model::PLAYING;
+		sf::Event e;
+		while (window.isOpen() and window.waitEvent(e)) {
+			if (e.type == sf::Event::Closed) {
+				std::cout << "SfmlVc got close Event\n";
+				view->handleEvent(new SfmlExit);
+				//if (window.isOpen()) window.close();
+				return;
 			}
 		}
 	}

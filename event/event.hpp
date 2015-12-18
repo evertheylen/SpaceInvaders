@@ -9,9 +9,13 @@ dependencies["headers"] = [
 
 #pragma once
 
+// only used in SFML specific events:
+#include "SFML/Window.hpp"
+
 #include "yorel/multi_methods.hpp"
 
 #include "util/util.hpp"
+#include "model/model_state.hpp"
 
 namespace si {
 
@@ -65,7 +69,7 @@ public:                               \
 
 SIMPLE_EVENT(Init);
 
-SIMPLE_EVENT(GameStart);
+SIMPLE_EVENT(ModelStart);
 
 SIMPLE_EVENT(WaitPlayers);
 
@@ -98,11 +102,17 @@ public: \
 			PlayerEvent(n) {\
 		MM_INIT();\
 	}\
+	Event* clone() {\
+		return new name(*this);\
+	}\
 };
 
 PLAYER_EVENT(CreatePlayer);
 
 PLAYER_EVENT(ReleasePlayer);
+
+// shit gets real
+PLAYER_EVENT(PlayerShoots);
 
 class SetDirection: public PlayerEvent {
 public: 
@@ -117,7 +127,32 @@ public:
 		MM_INIT();
 	}
 	
+	Event* clone() {
+		return new SetDirection(*this);
+	}
+	
 	si::util::Vector2D_d dir;
+};
+
+
+class ModelStateChange: public Event {
+public: 
+	MM_CLASS(ModelStateChange, Event);
+	ModelStateChange(si::model::State _state):
+			state(_state) {
+		MM_INIT();
+	}
+	
+	ModelStateChange(const ModelStateChange& n):
+			Event(n), state(n.state) {
+		MM_INIT();
+	}
+	
+	Event* clone() {
+		return new ModelStateChange(*this);
+	}
+	
+	si::model::State state;
 };
 
 
@@ -137,13 +172,91 @@ SIMPLE_EVENT(LevelEnd);
 
 SIMPLE_EVENT(Recap);
 
-SIMPLE_EVENT(Victory);
+class GameStop: public Event {
+public:
+	MM_CLASS(GameStop, Event);
+	
+	GameStop(bool _victory): victory(_victory) {
+		MM_INIT();
+	}
+	
+	GameStop(const GameStop& g): Event(g), victory(g.victory) {
+		MM_INIT();
+	}
+	
+	Event* clone() {
+		return new GameStop(*this);
+	}
+	
+	bool victory;
+};
 
-SIMPLE_EVENT(Failure);
-
-SIMPLE_EVENT(GameStop);
+SIMPLE_EVENT(VCStop);
 
 SIMPLE_EVENT(Quit);
+
+
+
+
+// Below are sfml specific events (TODO put in other file)
+
+SIMPLE_EVENT(SfmlEvent);
+
+enum DisplayState { OK, ERROR };
+
+class DisplayText: public SfmlEvent {
+public:
+	MM_CLASS(DisplayText, SfmlEvent);
+	DisplayText(const std::string& msg, DisplayState _state = DisplayState::OK):
+			message(msg), state(_state) {
+		MM_INIT();
+	}
+	
+	DisplayText(const DisplayText& d):
+			SfmlEvent(d), message(d.message), state(d.state) {
+		MM_INIT();
+	}
+	
+	std::string message;
+	DisplayState state;
+};
+
+class SfmlInput: public SfmlEvent {
+public:
+	MM_CLASS(SfmlInput, SfmlEvent);
+	SfmlInput(const sf::Event& e):
+			event(e) {
+		MM_INIT();
+	}
+	
+	SfmlInput(const SfmlInput& d):
+			SfmlEvent(d), event(d.event) {
+		MM_INIT();
+	}
+	
+	sf::Event event;
+};
+
+class SfmlExit: public SfmlEvent {
+public:
+	MM_CLASS(SfmlExit, SfmlEvent);
+	SIMPLE_CTORS(SfmlExit);
+	Event* clone() {
+		return new SfmlExit(*this);
+	}
+};
+
+class SfmlReady: public SfmlEvent {
+public:
+	MM_CLASS(SfmlReady, SfmlEvent);
+	SIMPLE_CTORS(SfmlReady);
+	Event* clone() {
+		return new SfmlReady(*this);
+	}
+};
+
+
+
 
 // don't like macro's?
 #undef SIMPLE_EVENT

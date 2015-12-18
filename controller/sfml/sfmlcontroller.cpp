@@ -1,6 +1,9 @@
 
+#include <vector>
+
 #include "sfmlcontroller.hpp"
 
+#include "view/sfml/sfmlview.hpp"
 #include "game/game.hpp"
 #include "util/util.hpp"
 
@@ -13,35 +16,26 @@ SfmlController::SfmlController(Game* g):
 
 std::vector<std::thread*> SfmlController::start() {
 	std::cout << "Controller has started\n";
-	// Model should not be started yet!
-	// otherwise the model_lock will be locked until the end of the game
-	game->model_lock();
-	my_player = game->get_model().get_player();
-	game->model_unlock();
-	
-	std::cout << "Controller done\n";
-	return SfmlBase::start();
+	std::vector<std::thread*> v = {new std::thread(&SfmlController::loop, this)};
+	return v + SfmlBase::start();
 }
 
-void SfmlController::handleSfmlEvent(sf::Event& e) {
-	//std::cout << "controller got event\n";
-	switch (e.type) {
-		// key pressed
-		case sf::Event::KeyPressed:
-			switch(e.key.code) {
-				case sf::Keyboard::Left:
-					game->notifyModel(new SetMovement(util::WEST, my_player));
-					break;
-				case sf::Keyboard::Right:
-					game->notifyModel(new SetMovement(util::EAST, my_player));
-					break;
-				default: break;
-			}
-			break;
-		case sf::Event::KeyReleased:
-			game->notifyModel(new SetMovement(util::HOLD, my_player));
-		// we don't process other types of events
-		default:
-			break;
+void SfmlController::handleEvent(Event* e) {
+	// let the other thread handle it
+	queue.push(e);
+	slp.wake_up();
+}
+
+
+void SfmlController::loop() {
+	while (true) {
+		while (not queue.empty()) {
+			std::cout << "SfmlController: got some event (in loop)\n";
+			Event* e = queue.pop();
+			_handleEvent(this, *e);
+			if (state == model::EXIT) return; // thereby closing this Controller
+		}
+		slp.sleep();
 	}
 }
+

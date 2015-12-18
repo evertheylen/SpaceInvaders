@@ -55,8 +55,8 @@ Model::Model(const picojson::value& conf, Game* g): game(g) {
 		throw ParseError("Root should be an object");
 	}
 	
-	for (int i=0; i<max_players; i++) {
-		leftover_players.load().insert(i);
+	for (unsigned int i=0; i<max_players; i++) {
+		leftover_players.insert(i);
 	}
 }
 
@@ -67,21 +67,38 @@ std::vector<std::thread*> Model::start() {
 
 void Model::loop() {
 	// The game has started!
-	game->notifyViews(new GameStart);
-	game->model_lock();
+	game->notifyViews(new ModelStart);
+	game->notifyControllers(new ModelStart);
+	
+	while (true) {
+		switch (state) {
+			case State::WAIT:
+				Wait();
+				break;
+			case State::PLAYING:
+				Playing();
+				break;
+			case State::RECAP:
+				Recap();
+				break;
+			case State::EXIT:
+				return;
+		}
+	}
+}
+
+void Model::Playing() {
 	util::Stopwatch::TimePoint current_tick = watch.now();
 	util::Stopwatch::TimePoint prev_tick;
 	
-	while (true) {
-		// TODO handle exit --> break
-		
+	while (state == PLAYING) {
 		// tick
 		game->entity_lock.write_lock();
 		prev_tick = current_tick;
 		current_tick = watch.now();
 		util::Stopwatch::Duration duration = current_tick - prev_tick;
 		
-		for (const std::unique_ptr<Entity>& e: entities) {
+		for (Entity* e: entities) {
 			e->mov.perform(duration, e->pos);
 		}
 		
@@ -95,16 +112,46 @@ void Model::loop() {
 		// Could be concurrent, could be blocking. The View is responsible for that.
 		game->notifyViews(new Tick);
 	}
-	game->model_unlock();
-	game->notifyViews(new GameStop);
 }
+
+void Model::loadLevel(Level& l) {
+	unloadLevel();
+	// add players
+	for (auto& it: players) {
+		entities.insert(it.second.get());
+	}
+	// create aliens TODO
+	saved_entities.insert(new Alien(350, 350));
+	for (auto& e: saved_entities) {
+		entities.insert(e);
+	}
+}
+
+void Model::unloadLevel() {
+	// not players
+	for (Entity* e: saved_entities) {
+		delete e;
+	}
+	saved_entities.clear();
+	entities.clear();
+}
+
+
+void Model::Wait() {
+	while (Event* e = game->get_controller_event()) {
+		std::cout << "Model in Wait, got event!\n";
+		handleEvent(e);
+	}
+}
+
+void Model::Recap() {
+	
+}
+
 
 EntityRange Model::all_entities() const {
 	return EntityRange(*this);
 }
 
-model::Player* Model::get_player() const {
-	return player;
-}
 
 

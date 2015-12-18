@@ -23,6 +23,7 @@ dependencies["build_objects"] = [
 #include "SFML/Graphics.hpp"
 
 #include "viewcontroller/viewcontroller.hpp"
+#include "event/event.hpp"
 
 namespace si {
 
@@ -65,6 +66,10 @@ public:
 	std::vector<std::thread*> start();
 	
 	sf::RenderWindow window;
+	
+	si::view::SfmlView* get_view() {
+		return view;
+	}
 	
 private:
 	// Will block for a long time (usually)

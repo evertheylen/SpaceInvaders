@@ -20,12 +20,14 @@ dependencies["build_objects"] = [
 #include <vector>
 
 #include "SFML/Graphics.hpp"
+#include "yorel/multi_methods.hpp"
 
 #include "view/view.hpp"
 #include "event/event.hpp"
 #include "viewcontroller/sfml/sfmlvc.hpp"
 #include "model/entity/entity.hpp"
 #include "util/ccq/ccq.hpp"
+#include "model/model_state.hpp"
 
 #include "sfmlresources.hpp"
 
@@ -52,7 +54,7 @@ public:
 	static void load_resources();
 	static void unload_resources();
 	
-	// called by game
+	// called by game or controller
 	// may dispatch the events to the functions in mm_sfmlview.cpp
 	void handleEvent(Event* e);
 	
@@ -60,28 +62,27 @@ public:
 	template <typename T>
 	friend class _handleEvent_specialization;
 	
+	friend class vc::SfmlVc;
+	
+	
 private:
 	void redraw();
 	
 	util::CCQueue<Event*> queue;
-	//void sleep();
-	//void wake_up();
 	
+	model::State state = model::State::WAIT;
 	void loop();
 	
 	Game* game;
 	
-	// by default nullptr
-	static SfmlResources* res;
-	
-	// to go to sleep / wake up
-	// spurious wakeups may happen, but the CCQ will be empty
-	//std::mutex sleep_lock;
-	//std::condition_variable sleep_cv;
-	
 	// keeps track of all the objects on screen, and their respective entities
 	std::map<si::model::Entity*, sf::Sprite> sprites;
 	sf::Sprite backgroundsprite;
+	
+	// OpenGL can't handle reusing the same textures in multiple threads
+	// Constructing this should automatically load the textures
+	SfmlResources res;
+	
 };
 
 }
