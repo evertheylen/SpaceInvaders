@@ -83,6 +83,8 @@ private:
 	// Constructing this should automatically load the textures
 	SfmlResources res;
 	
+	// statistics
+	long int ticks = 0;
 };
 
 }

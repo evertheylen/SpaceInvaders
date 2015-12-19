@@ -7,74 +7,8 @@
 #include <iomanip>
 #include <random>
 
-#include <pthread.h>
-#include <atomic>
-
-using ClockT = std::chrono::high_resolution_clock;
-using TimepointT = std::chrono::time_point<ClockT>;
-
-// Did you know C++ has the thread_local keyword?
-// neither did I.
-// This is only used for readers, which is a fair price to pay (there's only one writer usually)
-thread_local TimepointT tsd_last_update;
-
-class RWLock {
-public:
-	RWLock() {
-		lock = new pthread_rwlock_t;
-		pthread_rwlock_init(lock, nullptr);
-	}
-	
-	bool read_lock() {
-		if (closed) return false;
-		while (true) { // spinning all day, all night
-			if (tsd_last_update < update.load()) {
-				pthread_rwlock_rdlock(lock);
-				return true;
-			}
-		}
-	}
-	
-	bool try_read_lock() {
-		if (closed) return false;
-		if (tsd_last_update < update.load()) {
-			return pthread_rwlock_tryrdlock(lock);
-		} else {
-			return false;
-		}
-	}
-	
-	bool write_lock() {
-		if (closed) return false;
-		pthread_rwlock_wrlock(lock);
-	}
-	
-	void write_unlock() {
-		update = clock.now();
-		pthread_rwlock_unlock(lock);
-	}
-	
-	void read_unlock() {
-		tsd_last_update = clock.now();
-		pthread_rwlock_unlock(lock);
-	}
-	
-	void close() {
-		closed = true;
-	}
-	
-	~RWLock() {
-		delete lock;
-	}
-	
-private:
-	static ClockT clock;
-	
-	std::atomic<TimepointT> update{TimepointT()};
-	std::atomic<bool> closed{false};
-	pthread_rwlock_t* lock = nullptr;
-	//static pthread_rwlockattr_t attr;
-};
+#include "../../util/rwlock/rwlock.hpp"
+#include "../../util/rwlock/rwlock.cpp"
 
 /* timeline
 
@@ -87,6 +21,8 @@ w |----|        |---||----|         |----|
 */
 
 constexpr int num = 50;
+
+constexpr int factor = 1;
 
 int main() {
 	int data = 0;
@@ -108,27 +44,37 @@ int main() {
 		cout_lock.unlock();
 	};
 	
+	std::atomic<int> writes;
+	int maxwrites = 0;
+	
 	auto reader = [&](int ID) {
 		print("READ STARTED\n");
-		for (int i=0; i<num; i++) {
-			if (rw.read_lock()) {
+		auto ts = rw.new_timestamp();
+		for (int i=0; ; i++) {
+			if (rw.read_lock(ts)) {
+				writes = 0;
 				//rw.read_lock();
-				print("read\n");
-				std::this_thread::sleep_for(std::chrono::microseconds(int(dist(rd)*5000.0)));
-				rw.read_unlock();
+				//print("read\n");
+				std::this_thread::sleep_for(std::chrono::microseconds(factor*50));
+				rw.read_unlock(ts);
 			} else {
 				print("rwlock closed\n");
 			}
 		}
-		std::cout << "last_update:" << tsd_last_update.time_since_epoch().count() << "\n";
+		std::cout << "last_update:" << ts.time_since_epoch().count() << "\n";
 	};
 	
 	auto writer = [&]() {
 		print("WRITE STARTED\n");
-		for (int i=0; i<num; i++) {
+		for (int i=0; ; i++) {
 			rw.write_lock();
-			print("----- write\n");
-			std::this_thread::sleep_for(std::chrono::microseconds(int(dist(rd)*5000.0)));
+			//print("----- write\n");
+				writes++;
+				if (writes > maxwrites) {
+					std::cout << "holy fuck, " << writes << " writes!\n";
+					maxwrites = writes;
+				} 
+			std::this_thread::sleep_for(std::chrono::microseconds(factor*1));
 			data++;
 			rw.write_unlock();
 		}
@@ -136,7 +82,7 @@ int main() {
 	};
 	
 	std::vector<std::thread*> threads;
-	for (int i=0; i<5; i++) {
+	for (int i=0; i<1; i++) {
 		threads.push_back(new std::thread(reader, i));
 	}
 	threads.push_back(new std::thread(writer));

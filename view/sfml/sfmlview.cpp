@@ -22,24 +22,20 @@ std::vector<std::thread*> SfmlView::start() {
 }
 
 void SfmlView::redraw() {
-	//sf::Context context;
-	if (game->entity_lock.read_lock()) {
-		handle->window.draw(backgroundsprite);
-		
-		// initialize all sprites
-		for (const auto& e: game->get_model().all_entities()) {
-			sprites[e] = sf::Sprite();
-			//sprites[e].setTextureRect(sf::IntRect(e->x, e->y, 64, 64));
-			// TODO replace with yomm
-			if (dynamic_cast<si::model::Player*>(e)) {
-				sprites[e].setTexture(res.player);
-			} else {
-				sprites[e].setTexture(res.big_alien);
-			}
-			sprites[e].setPosition(e->pos.x, e->pos.y);
-			handle->window.draw(sprites[e]);
+	handle->window.draw(backgroundsprite);
+	
+	// initialize all sprites
+	for (const auto& e: game->get_model().all_entities()) {
+		sprites[e] = sf::Sprite();
+		//sprites[e].setTextureRect(sf::IntRect(e->x, e->y, 64, 64));
+		// TODO replace with yomm
+		if (dynamic_cast<si::model::Player*>(e)) {
+			sprites[e].setTexture(res.player);
+		} else {
+			sprites[e].setTexture(res.big_alien);
 		}
-		game->entity_lock.read_unlock();
+		sprites[e].setPosition(e->pos.x, e->pos.y);
+		handle->window.draw(sprites[e]);
 	}
 }
 
@@ -59,19 +55,31 @@ void SfmlView::handleEvent(Event* e) {
 
 
 void SfmlView::loop() {
+	auto ts = game->entity_lock.new_timestamp();
 	while (true) {
-		if (state == model::PLAYING) {
-			handle->window.clear();
-			redraw(); // always 'expect' a tick
+		if (game->entity_lock.read_lock(ts)) {
+			if (state == model::PLAYING) {
+				handle->window.clear();
+				redraw(); // always 'expect' a tick
+				
+				// stats
+				if (ticks%501 == 0) {
+					std::cout << "SfmlView: Did 500 ticks ----------\n";
+					ticks = 1;
+				} else {
+					ticks++;
+				}
+			}
+			
+			if (not queue.empty()) {
+				Event* e = queue.pop();
+				_handleEvent(this, *e);
+				delete e;
+			}
+			if (state == model::EXIT) return;
+			if (state == model::PLAYING) handle->window.display();
+			game->entity_lock.read_unlock(ts);
 		}
-		
-		if (not queue.empty()) {
-			Event* e = queue.pop();
-			_handleEvent(this, *e);
-			delete e;
-		}
-		if (state == model::EXIT) return;
-		if (state == model::PLAYING) handle->window.display();
 	}
 }
 

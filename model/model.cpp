@@ -93,10 +93,21 @@ void Model::Playing() {
 	
 	while (state == PLAYING) {
 		// tick
-		game->entity_lock.write_lock();
 		prev_tick = current_tick;
 		current_tick = watch.now();
 		util::Stopwatch::Duration duration = current_tick - prev_tick;
+		
+		// statistics
+		if (ticks%501 == 0) {
+			std::cout << "Did 500 ticks, avg: " << avg_tick << "\n";
+			ticks = 1;
+			avg_tick = duration.count();
+		} else {
+			avg_tick += (duration.count() - avg_tick)/double(ticks);
+			ticks++;
+		}
+		
+		game->entity_lock.write_lock();
 		
 		for (Entity* e: entities) {
 			e->mov.perform(duration, e->pos);

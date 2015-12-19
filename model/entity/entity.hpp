@@ -58,5 +58,25 @@ public:
 };
 
 
+class Bullet: public Entity {
+public:
+	MM_CLASS(Bullet, Entity);
+	
+	Bullet(double _x, double _y): Entity(_x, _y) {
+		MM_INIT();
+		mov = Movement(0.4, util::Vector2D_d(0, 1)); // TODO magic constant
+	}
+};
+
+class Bomb: public Entity {
+public:
+	MM_CLASS(Bomb, Entity);
+	
+	Bomb(double _x, double _y): Entity(_x, _y) {
+		MM_INIT();
+		mov = Movement(0.1, util::Vector2D_d(0, -1)); // TODO magic constant
+	}
+};
+
 }
 }

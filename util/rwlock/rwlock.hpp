@@ -14,22 +14,24 @@ using TimepointT = std::chrono::time_point<ClockT>;
 // Did you know C++ has the thread_local keyword?
 // Neither did I. "tsd" stands for Thread Specific Data.
 // This is only used for readers, which is a fair price to pay (there's only one writer usually)
-extern thread_local TimepointT tsd_last_update;
+// extern thread_local TimepointT tsd_last_update;
 
 class RWLock {
 public:
 	RWLock();
 	
-	// if this returns false, the lock has been closed.
-	bool read_lock();
+	TimepointT new_timestamp();
 	
-	bool try_read_lock();
+	// if this returns false, the lock has been closed.
+	bool read_lock(TimepointT& stamp);
+	
+	bool try_read_lock(TimepointT& stamp);
 	
 	bool write_lock();
 	
 	void write_unlock();
 	
-	void read_unlock();
+	void read_unlock(TimepointT& stamp);
 	
 	void close();
 	
@@ -38,10 +40,12 @@ public:
 private:
 	static ClockT clock;
 	
-	std::atomic<TimepointT> update{TimepointT()};
+	std::atomic<TimepointT> last_write{TimepointT()};
+	std::atomic<bool> read{true};
 	std::atomic<bool> closed{false};
+	
 	pthread_rwlock_t* lock = nullptr;
-	//static pthread_rwlockattr_t attr;
+	pthread_rwlockattr_t* attr = nullptr;
 };
 
 /* possible timeline:

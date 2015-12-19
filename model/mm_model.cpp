@@ -44,6 +44,17 @@ BEGIN_SPECIALIZATION(_handleEvent, void, Model* m, ReleasePlayer& e) {
 } END_SPECIALIZATION;
 
 
+BEGIN_SPECIALIZATION(_handleEvent, void, Model* m, Fire& e) {
+	Player* p = m->players[e.ID].get();
+	// create a bullet
+	Bullet* b = new Bullet(p->pos.x+10, p->pos.y+8); // TODO :)
+	m->entities.insert(b);
+	m->saved_entities.insert(b);
+	// notify views that a player has shot
+	m->game->notifyViews(new PlayerShoots(p));
+} END_SPECIALIZATION;
+
+
 BEGIN_SPECIALIZATION(_handleEvent, void, Model* m, SetDirection& e) {
 	m->players[e.ID]->mov.dir = e.dir;
 } END_SPECIALIZATION;
@@ -51,6 +62,7 @@ BEGIN_SPECIALIZATION(_handleEvent, void, Model* m, SetDirection& e) {
 
 BEGIN_SPECIALIZATION(_handleEvent, void, Model* m, VCStop& e) {
 	m->state = model::EXIT;
+	std::cout << "Did " << m->ticks << " ticks, taking an average of " << m->avg_tick << "\n";
 } END_SPECIALIZATION;
 
 BEGIN_SPECIALIZATION(_handleEvent, void, Model* m, Ready& e) {

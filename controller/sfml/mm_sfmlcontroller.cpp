@@ -51,12 +51,21 @@ BEGIN_SPECIALIZATION(_handleEvent, void, SfmlController* c, SfmlInput& e) {
 						case sf::Keyboard::Right:
 							c->game->notifyModel(new SetDirection(c->my_player, util::EAST));
 							break;
+						case sf::Keyboard::Space:
+							c->game->notifyModel(new Fire(c->my_player));
 						default:
 							break;
 					}
 					break;
 				case sf::Event::KeyReleased:
-					c->game->notifyModel(new SetDirection(c->my_player, util::HOLD));
+					switch(se.key.code) {
+						case sf::Keyboard::Left:
+						case sf::Keyboard::Right:
+							c->game->notifyModel(new SetDirection(c->my_player, util::HOLD));
+							break;
+						default:
+							break;
+					}
 				// we don't process other types of events
 				default:
 					break;

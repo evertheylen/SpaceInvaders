@@ -16,6 +16,7 @@ dependencies["headers"] = [
 
 #include "util/util.hpp"
 #include "model/model_state.hpp"
+#include "model/entity/entity.hpp"
 
 namespace si {
 
@@ -112,7 +113,7 @@ PLAYER_EVENT(CreatePlayer);
 PLAYER_EVENT(ReleasePlayer);
 
 // shit gets real
-PLAYER_EVENT(PlayerShoots);
+PLAYER_EVENT(Fire);
 
 class SetDirection: public PlayerEvent {
 public: 
@@ -132,6 +133,67 @@ public:
 	}
 	
 	si::util::Vector2D_d dir;
+};
+
+// class EntityEvent: public Event {
+// public:
+// 	MM_CLASS(EntityEvent, Event);
+// 	
+// 	EntityEvent(model::Entity* _entity):
+// 			entity(_entity) {
+// 		MM_INIT();
+// 	}
+// 	
+// 	EntityEvent(const EntityEvent& p):
+// 			entity(p.entity) {
+// 		MM_INIT();
+// 	}
+// 	
+// 	model::Entity* entity;
+// };
+
+
+#define ENTITY_EVENT(name, entity_type)       \
+class name: public Event { \
+public: \
+	MM_CLASS(name, Event);\
+	name(entity_type * _entity):\
+			entity(_entity) {\
+		MM_INIT();\
+	}\
+	name(const name& n):\
+			Event(n) {\
+		MM_INIT();\
+	}\
+	Event* clone() {\
+		return new name(*this);\
+	}\
+	entity_type * entity;\
+};
+
+
+ENTITY_EVENT(Death, model::Entity);
+
+ENTITY_EVENT(PlayerShoots, model::Player);
+
+ENTITY_EVENT(AlienShoots, model::Alien);
+
+class Collision: public Event {
+public:
+	MM_CLASS(Collision, Event);
+	
+	Collision(model::Entity* _a, model::Entity* _b):
+			a(_a), b(_b) {
+		MM_INIT();
+	}
+	
+	Collision(const Collision& p):
+			Event(p), a(p.a), b(p.b) {
+		MM_INIT();
+	}
+	
+	model::Entity* a;
+	model::Entity* b;
 };
 
 

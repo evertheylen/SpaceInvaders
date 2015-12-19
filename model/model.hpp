@@ -130,6 +130,10 @@ private:
 	
 	Game* game;
 	util::Stopwatch watch;
+	
+	// Statistics
+	long int ticks = 0;
+	double avg_tick = 0.0;
 };
 
 }
