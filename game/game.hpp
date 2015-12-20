@@ -39,18 +39,21 @@ public:
 	
 	
 	// --- [un]registering ---
-	void registerView(view::View* v);
-	void unregisterView(view::View* v);
+	void register_view(view::View* v);
+	void unregister_view(view::View* v);
 	
-	void registerController(controller::Controller* c);
-	void unregisterController(controller::Controller* c);
+	void register_controller(controller::Controller* c);
+	void unregister_controller(controller::Controller* c);
 	
 	
 	// --- communication between M/V/C ---
-	void notifyControllers(Event* e);
-	void notifyViews(Event* e);
-	void notifyViews(Tick* e); // simple optimization (Tick is subclass of Event)
-	void notifyModel(Event* e);
+	// The model pushes messages to both views (for nearly all output) and controllers
+	// (for important state changes, eg. "the game is over stop processing input please").
+	void notify_controllers(Event* e);
+	void notify_views(Event* e);
+	void notify_views(Tick* e); // simple optimization (Tick is subclass of Event)
+	// The model pulls input from the controller (nullptr if no input)
+	Event* get_input_event();
 	
 	// get (const!) info about the model if needed
 	const model::Model& get_model() const;
@@ -59,8 +62,6 @@ public:
 	// result < 0 ==> there is no player available
 	int get_player();
 	
-	// gives an Event* to the model when asked, could be nullptr
-	Event* get_controller_event();
 	
 	// --- avoiding race conditions ---
 	void model_lock();
@@ -75,11 +76,10 @@ private:
 	// the model, also contains a stopwatch
 	model::Model the_model;
 	
-	// CCQ for the model
-	util::CCQueue<Event*> model_queue;
-	
 	// mutex for the model
 	std::mutex model_mutex;
+	
+	util::CCQueue<Event*> model_input;
 	
 	// controllers
 	std::set<controller::Controller*> controllers;

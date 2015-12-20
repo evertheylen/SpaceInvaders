@@ -15,6 +15,7 @@ dependencies["headers"] = [
 #include "yorel/multi_methods.hpp"
 
 #include "util/util.hpp"
+#include "util/flag/flag.hpp"
 #include "model/model_state.hpp"
 #include "model/entity/entity.hpp"
 
@@ -44,7 +45,9 @@ public:
 	
 	SIMPLE_CTORS(Event);
 	
-	virtual Event* clone() = 0;
+	virtual Event* clone() const = 0;
+	
+	virtual const char* name() const = 0;
 };
 
 
@@ -54,12 +57,19 @@ namespace model {
 }
 
 
-#define SIMPLE_EVENT(name)      \
-class name: public Event {             \
+#define SIMPLE_NAME(argname) \
+const char* name() const { \
+  return argname ; \
+}
+
+
+#define SIMPLE_EVENT(name)            \
+class name: public Event {            \
 public:                               \
-	MM_CLASS(name, Event);             \
+	MM_CLASS(name, Event);            \
 	SIMPLE_CTORS(name);               \
-	Event* clone() {                  \
+	SIMPLE_NAME( #name );              \
+	Event* clone() const {            \
 		return new name(*this);       \
 	}                                 \
 };
@@ -77,7 +87,7 @@ SIMPLE_EVENT(WaitPlayers);
 class PlayerEvent: public Event {
 public:
 	MM_CLASS(PlayerEvent, Event);
-	
+	SIMPLE_NAME("PlayerEvent")
 	PlayerEvent(unsigned int _ID):
 			ID(_ID) {
 		MM_INIT();
@@ -95,6 +105,7 @@ public:
 class name: public PlayerEvent { \
 public: \
 	MM_CLASS(name, PlayerEvent);\
+	SIMPLE_NAME( #name ) \
 	name(unsigned int _ID):\
 			PlayerEvent(_ID) {\
 		MM_INIT();\
@@ -103,7 +114,7 @@ public: \
 			PlayerEvent(n) {\
 		MM_INIT();\
 	}\
-	Event* clone() {\
+	Event* clone() const {\
 		return new name(*this);\
 	}\
 };
@@ -118,6 +129,7 @@ PLAYER_EVENT(Fire);
 class SetDirection: public PlayerEvent {
 public: 
 	MM_CLASS(SetDirection, PlayerEvent);
+	SIMPLE_NAME("SetDirection")
 	SetDirection(unsigned int _ID, si::util::Vector2D_d _dir):
 			PlayerEvent(_ID), dir(_dir) {
 		MM_INIT();
@@ -128,7 +140,7 @@ public:
 		MM_INIT();
 	}
 	
-	Event* clone() {
+	Event* clone() const {
 		return new SetDirection(*this);
 	}
 	
@@ -157,6 +169,7 @@ public:
 class name: public Event { \
 public: \
 	MM_CLASS(name, Event);\
+	SIMPLE_NAME( #name ) \
 	name(entity_type * _entity):\
 			entity(_entity) {\
 		MM_INIT();\
@@ -165,7 +178,7 @@ public: \
 			Event(n) {\
 		MM_INIT();\
 	}\
-	Event* clone() {\
+	Event* clone() const {\
 		return new name(*this);\
 	}\
 	entity_type * entity;\
@@ -181,6 +194,7 @@ ENTITY_EVENT(AlienShoots, model::Alien);
 class Collision: public Event {
 public:
 	MM_CLASS(Collision, Event);
+	SIMPLE_NAME("Collision");
 	
 	Collision(model::Entity* _a, model::Entity* _b):
 			a(_a), b(_b) {
@@ -192,6 +206,10 @@ public:
 		MM_INIT();
 	}
 	
+	Event* clone() const {
+		return new Collision(*this);
+	}
+	
 	model::Entity* a;
 	model::Entity* b;
 };
@@ -200,6 +218,8 @@ public:
 class ModelStateChange: public Event {
 public: 
 	MM_CLASS(ModelStateChange, Event);
+	SIMPLE_NAME("ModelStateChange")
+	
 	ModelStateChange(si::model::State _state):
 			state(_state) {
 		MM_INIT();
@@ -210,7 +230,7 @@ public:
 		MM_INIT();
 	}
 	
-	Event* clone() {
+	Event* clone() const {
 		return new ModelStateChange(*this);
 	}
 	
@@ -237,6 +257,7 @@ SIMPLE_EVENT(Recap);
 class GameStop: public Event {
 public:
 	MM_CLASS(GameStop, Event);
+	SIMPLE_NAME("GameStop")
 	
 	GameStop(bool _victory): victory(_victory) {
 		MM_INIT();
@@ -246,7 +267,7 @@ public:
 		MM_INIT();
 	}
 	
-	Event* clone() {
+	Event* clone() const {
 		return new GameStop(*this);
 	}
 	
@@ -269,6 +290,8 @@ enum DisplayState { OK, ERROR };
 class DisplayText: public SfmlEvent {
 public:
 	MM_CLASS(DisplayText, SfmlEvent);
+	SIMPLE_NAME("DisplayText")
+	
 	DisplayText(const std::string& msg, DisplayState _state = DisplayState::OK):
 			message(msg), state(_state) {
 		MM_INIT();
@@ -286,6 +309,8 @@ public:
 class SfmlInput: public SfmlEvent {
 public:
 	MM_CLASS(SfmlInput, SfmlEvent);
+	SIMPLE_NAME("SfmlInput")
+	
 	SfmlInput(const sf::Event& e):
 			event(e) {
 		MM_INIT();
@@ -303,7 +328,9 @@ class SfmlExit: public SfmlEvent {
 public:
 	MM_CLASS(SfmlExit, SfmlEvent);
 	SIMPLE_CTORS(SfmlExit);
-	Event* clone() {
+	SIMPLE_NAME("SfmlExit")
+	
+	Event* clone() const {
 		return new SfmlExit(*this);
 	}
 };
@@ -312,10 +339,14 @@ class SfmlReady: public SfmlEvent {
 public:
 	MM_CLASS(SfmlReady, SfmlEvent);
 	SIMPLE_CTORS(SfmlReady);
-	Event* clone() {
+	SIMPLE_NAME("SfmlReady")
+	
+	Event* clone() const {
 		return new SfmlReady(*this);
 	}
 };
+
+
 
 
 

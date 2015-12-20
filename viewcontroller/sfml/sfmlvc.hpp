@@ -24,6 +24,7 @@ dependencies["build_objects"] = [
 
 #include "viewcontroller/viewcontroller.hpp"
 #include "event/event.hpp"
+#include "util/flag/flag.hpp"
 
 namespace si {
 
@@ -33,29 +34,13 @@ namespace view { class SfmlView; }
 
 namespace vc {
 
-class SfmlVc;
-
-// Base class for both SfmlView as SfmlController
-class SfmlBase {
-public:
-	friend SfmlVc;
-	
-	// might or might not block for a long time
-	std::vector<std::thread*> start();
-	
-protected:
-	vc::SfmlVc* handle = nullptr;
-};
-
-
-
 class SfmlVc: public ViewController {
 public:
-	// SfmlVc should already be in a usable state after the constructor (obviously)
-	SfmlVc(unsigned int width=800, unsigned int height=600);
+	SfmlVc() = default;
 	
 	SfmlVc(const SfmlVc& other) = delete;
 	
+	void init(int width=800, int height=600);
 	
 	void couple_controller(si::controller::SfmlController* _controller);
 	void decouple_controller();
@@ -65,15 +50,19 @@ public:
 	
 	std::vector<std::thread*> start();
 	
-	sf::RenderWindow window;
+	~SfmlVc();
 	
-	si::view::SfmlView* get_view() {
-		return view;
-	}
+//protected:  // friending the other classes simply does not work it seems
 	
-private:
+	// no `friend class` here because of forward declaration
+	friend view::SfmlView;
+	friend controller::SfmlController;
+	
 	// Will block for a long time (usually)
-	void loop();
+	// Only called in a multithreaded SFML:VC
+	void loop(util::Flag& f);
+	
+	sf::RenderWindow* window = nullptr;
 	
 	// multithreaded stuff
 	std::atomic<std::thread*> running_thread{nullptr};

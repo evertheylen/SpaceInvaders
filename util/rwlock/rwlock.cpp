@@ -19,15 +19,12 @@ TimepointT RWLock::new_timestamp() {
 // if this returns false, the lock has been closed.
 bool RWLock::read_lock(TimepointT& stamp) {
 	if (closed) return true;
-	std::cout << "Reader waiting for last_write update\n";
 	while (true) { // spinning all day, all night
 		if (stamp < last_write.load()) {
-			std::cout << "Reader waiting for last_write update\n";
 			pthread_rwlock_rdlock(lock);
 			return true;
 		}
 	}
-
 }
 
 bool RWLock::try_read_lock(TimepointT& stamp) {
@@ -43,7 +40,7 @@ bool RWLock::write_lock() {
 	if (closed) return false;
 	pthread_rwlock_wrlock(lock);
 	// last_write should kind of be in the future, but if I set it after the lock the
-	// readers won't see the difference
+	// readers won't see the difference, and there will be less problems with starvation
 	last_write = clock.now();
 	return true;
 }

@@ -9,30 +9,48 @@ namespace si {
 namespace view {
 
 
-BEGIN_SPECIALIZATION(_handleEvent, void, SfmlView* m, Event& e) {
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const Event& e) {
 	std::cout << "SfmlView: Unhandled Event occured\n";
 } END_SPECIALIZATION;
 
-BEGIN_SPECIALIZATION(_handleEvent, void, SfmlView* m, Tick& e) {
-	if (m->state == model::PLAYING) {
-		m->handle->window.clear();
-		m->redraw(); // always 'expect' a tick
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const Tick& e) {
+	if (v->state == model::PLAYING) {
+		v->handle->window->clear();
+		v->redraw(); // always 'expect' a tick
+	}
+	
+	if (not v->concurrent and v->handle->controller == nullptr) {
+		// if there is no controller, and we're not concurrent, that
+		// means we have to process some input ourselves
+		sf::Event e;
+		while (v->handle->window->isOpen() and v->handle->window->pollEvent(e)) {
+			if (e.type == sf::Event::Closed) {
+				std::cout << "SfmlView: got close sf::Event\n";
+				v->handle_event(new si::SfmlExit);
+			}
+		}
 	}
 } END_SPECIALIZATION;
 
 
-BEGIN_SPECIALIZATION(_handleEvent, void, SfmlView* m, ModelStart& e) {
-	std::cout << "SfmlView Init\n";
-	m->handle->window.setActive(true);
-	m->handle->window.clear();
-	m->handle->window.display();
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const ModelStart& e) {
+	std::cout << "SfmlView: got ModelStart\n";
+	if (v->state != model::PRE_WAIT) {
+		if (not v->concurrent and v->handle->controller == nullptr)
+			v->handle->init();
+		v->handle->window->setActive(true);
+		v->handle->window->clear(sf::Color::Blue);
+		v->handle->window->display();
+		v->state = model::WAIT;
+	}
+	std::cout << "SfmlView: ModelStart done\n";
 } END_SPECIALIZATION;
 
 
-BEGIN_SPECIALIZATION(_handleEvent, void, SfmlView* m, DisplayText& e) {
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const DisplayText& e) {
 	std::cout << "SfmlView: display text " << e.message << "\n";
 	sf::Text text;
-	text.setFont(m->res.font);
+	text.setFont(v->res.font);
 	text.setString(e.message);
 	text.setCharacterSize(24); // in pixels, not points!
 	if (e.state == DisplayState::ERROR) {
@@ -40,36 +58,37 @@ BEGIN_SPECIALIZATION(_handleEvent, void, SfmlView* m, DisplayText& e) {
 	} else {
 		text.setColor(sf::Color::Green);
 	}
-	m->handle->window.draw(text);
-	m->handle->window.display();
+	v->handle->window->draw(text);
+	v->handle->window->display();
 } END_SPECIALIZATION;
 
 
-BEGIN_SPECIALIZATION(_handleEvent, void, SfmlView* m, SfmlExit& e) {
-	if (m->handle->window.isOpen()) m->handle->window.close();
-	m->state = model::EXIT;
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const SfmlExit& e) {
+	if (v->handle->window->isOpen()) v->handle->window->close();
+	v->state = model::EXIT;
+	v->done.set();
 } END_SPECIALIZATION;
 
 
-BEGIN_SPECIALIZATION(_handleEvent, void, SfmlView* m, SfmlReady& e) {
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const SfmlReady& e) {
 	std::cout << "SfmlView starts playing\n";
-	m->state = model::PLAYING;
+	v->state = model::PLAYING;
 } END_SPECIALIZATION;
 
 
-BEGIN_SPECIALIZATION(_handleEvent, void, SfmlView* m, LevelStart& e) {
-	if (m->state == model::WAIT) {
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const LevelStart& e) {
+	if (v->state == model::WAIT) {
 		std::cout << "We wait for the controller\n";
 	} else {
 		std::cout << "SfmlView starts playing\n";
-		m->state = m->game->get_model().get_state();
+		v->state = v->game->get_model().get_state();
 	}
 } END_SPECIALIZATION;
 
 
-BEGIN_SPECIALIZATION(_handleEvent, void, SfmlView* m, LevelEnd& e) {
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const LevelEnd& e) {
 	std::cout << "SfmlView stops playing\n";
-	m->state = model::RECAP;
+	v->state = model::RECAP;
 } END_SPECIALIZATION;
 
 

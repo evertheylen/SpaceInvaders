@@ -19,18 +19,15 @@ namespace view {
 
 class View {
 public:
-	View(bool _concurrent): concurrent(_concurrent) {}
-	
 	virtual std::vector<std::thread*> start() = 0;
 	
-	virtual void handleEvent(Event* e) = 0;
+	virtual void handle_event(Event* e) = 0;
 	
-	bool isConcurrent() { return concurrent; }
+	virtual bool is_concurrent() = 0;
+	
+	virtual void wait_until_done() = 0;
 	
 	~View() {};
-	
-private:
-	bool concurrent;
 };
 
 

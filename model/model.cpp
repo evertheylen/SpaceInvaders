@@ -67,19 +67,21 @@ std::vector<std::thread*> Model::start() {
 
 void Model::loop() {
 	// The game has started!
-	game->notifyViews(new ModelStart);
-	game->notifyControllers(new ModelStart);
+	// It's important I notify the controllers first
+	// The controller needs to start the window
+	game->notify_controllers(new ModelStart);
+	game->notify_views(new ModelStart);
 	
 	while (true) {
 		switch (state) {
 			case State::WAIT:
-				Wait();
+				wait();
 				break;
 			case State::PLAYING:
-				Playing();
+				playing();
 				break;
 			case State::RECAP:
-				Recap();
+				recap();
 				break;
 			case State::EXIT:
 				return;
@@ -87,7 +89,7 @@ void Model::loop() {
 	}
 }
 
-void Model::Playing() {
+void Model::playing() {
 	util::Stopwatch::TimePoint current_tick = watch.now();
 	util::Stopwatch::TimePoint prev_tick;
 	
@@ -98,8 +100,8 @@ void Model::Playing() {
 		util::Stopwatch::Duration duration = current_tick - prev_tick;
 		
 		// statistics
-		if (ticks%501 == 0) {
-			std::cout << "Did 500 ticks, avg: " << avg_tick << "\n";
+		if (ticks%100001 == 0) {
+			std::cout << "Model: Did 100000 ticks, avg: " << avg_tick << "\n";
 			ticks = 1;
 			avg_tick = duration.count();
 		} else {
@@ -114,19 +116,30 @@ void Model::Playing() {
 		}
 		
 		// handle Events, until nullptr
-		while (Event* e = game->get_controller_event()) {
-			handleEvent(e);
+		while (Event* e = game->get_input_event()) {
+			handle_event(e);
 		}
 		game->entity_lock.write_unlock();
 		
 		// update views
 		// Could be concurrent, could be blocking. The View is responsible for that.
-		game->notifyViews(new Tick);
+		game->notify_views(new Tick);
 	}
 }
 
-void Model::loadLevel(Level& l) {
-	unloadLevel();
+void Model::wait() {
+	while (Event* e = game->get_input_event()) {
+		std::cerr << " [ V   M<--C ] Model pulling Event from Controllers: " << e->name() << "\n";
+		handle_event(e);
+	}
+}
+
+void Model::recap() {
+	
+}
+
+void Model::load_level(Level& l) {
+	unload_level();
 	// add players
 	for (auto& it: players) {
 		entities.insert(it.second.get());
@@ -138,25 +151,13 @@ void Model::loadLevel(Level& l) {
 	}
 }
 
-void Model::unloadLevel() {
+void Model::unload_level() {
 	// not players
 	for (Entity* e: saved_entities) {
 		delete e;
 	}
 	saved_entities.clear();
 	entities.clear();
-}
-
-
-void Model::Wait() {
-	while (Event* e = game->get_controller_event()) {
-		std::cout << "Model in Wait, got event!\n";
-		handleEvent(e);
-	}
-}
-
-void Model::Recap() {
-	
 }
 
 

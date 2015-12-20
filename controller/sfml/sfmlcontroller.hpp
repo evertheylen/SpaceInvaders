@@ -25,6 +25,7 @@ dependencies["headers"] = [
 #include "model/entity/entity.hpp"
 #include "event/event.hpp"
 #include "util/ccq/ccq.hpp"
+#include "util/flag/flag.hpp"
 #include "util/sleepable/sleepable.hpp"
 #include "model/model_state.hpp"
 
@@ -39,26 +40,35 @@ class SfmlController;
 
 // Multimethods stuff
 using yorel::multi_methods::virtual_;
-MULTI_METHOD(_handleEvent, void, si::controller::SfmlController*, virtual_<si::Event>&);
+MULTI_METHOD(_handle_event, void, si::controller::SfmlController*, const virtual_<si::Event>&);
 
 
-class SfmlController: public si::vc::SfmlBase, public Controller {
+class SfmlController: public Controller {
 public:
 	
-	SfmlController(Game* g);
+	SfmlController(Game* g, bool _concurrent=false);
 	
 	std::vector<std::thread*> start();
 	
-	void loop();
+	void handle_event(Event* e);
 	
-	void handleEvent(Event* e);
+	Event* get_event();
+	
+	bool is_concurrent() { return concurrent; }
+	
+	void wait_until_done() { done.wait(); }
 	
 	// make sure all the handlers can actually access this class
 	template <typename T>
-	friend class _handleEvent_specialization;
+	friend class _handle_event_specialization;
+	
+	friend class vc::SfmlVc;
 	
 private:
-	util::CCQueue<Event*> queue;
+	void loop();
+	
+	util::CCQueue<Event*> input_queue; // input from model (or SfmlVc)
+	util::CCQueue<Event*> output_queue; // output to model
 	util::Sleepable slp;
 	
 	model::State state = model::State::PRE_WAIT;
@@ -66,6 +76,9 @@ private:
 	Game* game;
 	int my_player = -1;
 	
+	vc::SfmlVc* handle;
+	bool concurrent;
+	util::Flag done;
 };
 
 }

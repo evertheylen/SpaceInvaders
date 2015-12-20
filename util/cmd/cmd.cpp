@@ -66,7 +66,7 @@ CmdResult CmdParser::parse(std::vector<std::string>& args, Game* g) {
 				result.add_view(v);
 				result.add_vc(handle);
 				if (parts[1] == "VC") {
-					controller::SfmlController* c = new controller::SfmlController(g);
+					controller::SfmlController* c = new controller::SfmlController(g, concurrent);
 					handle->couple_controller(c);
 					result.add_controller(c);
 				}

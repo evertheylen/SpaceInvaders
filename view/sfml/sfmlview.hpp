@@ -27,6 +27,7 @@ dependencies["build_objects"] = [
 #include "viewcontroller/sfml/sfmlvc.hpp"
 #include "model/entity/entity.hpp"
 #include "util/ccq/ccq.hpp"
+#include "util/flag/flag.hpp"
 #include "model/model_state.hpp"
 
 #include "sfmlresources.hpp"
@@ -42,28 +43,28 @@ class SfmlView;
 
 // Multimethods stuff
 using yorel::multi_methods::virtual_;
-MULTI_METHOD(_handleEvent, void, si::view::SfmlView*, virtual_<si::Event>&);
+MULTI_METHOD(_handle_event, void, si::view::SfmlView*, const virtual_<si::Event>&);
 
 
-class SfmlView: public si::vc::SfmlBase, public View {
+class SfmlView: public View {
 public:
 	SfmlView(Game* g, bool _concurrent);
 	
 	std::vector<std::thread*> start();
 	
-	static void load_resources();
-	static void unload_resources();
-	
 	// called by game or controller
 	// may dispatch the events to the functions in mm_sfmlview.cpp
-	void handleEvent(Event* e);
+	void handle_event(Event* e);
+	
+	bool is_concurrent() { return concurrent; };
+	
+	void wait_until_done() { done.wait(); };
 	
 	// make sure all the handlers can actually access this class
 	template <typename T>
-	friend class _handleEvent_specialization;
+	friend class _handle_event_specialization;
 	
 	friend class vc::SfmlVc;
-	
 	
 private:
 	void redraw();
@@ -82,6 +83,10 @@ private:
 	// OpenGL can't handle reusing the same textures in multiple threads
 	// Constructing this should automatically load the textures
 	SfmlResources res;
+	
+	vc::SfmlVc* handle;
+	bool concurrent;
+	util::Flag done;
 	
 	// statistics
 	long int ticks = 0;

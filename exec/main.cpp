@@ -84,15 +84,19 @@ int main(int argc, char** argv) {
 		
 		arguments.erase(arguments.begin());
 		
+		// I like to put more whitespace around stuff that is important
+		
 		Game g(v);
 		
 		CmdResult r = cmd.parse(arguments, &g);
 		
-		// register all views and controller in the game
-		for (auto& v: r.views) g.registerView(v.get());
-		for (auto& c: r.controllers) g.registerController(c.get());
+		// Register all views and controller in the game
+		// This is like the Observer Pattern
+		for (auto& v: r.views) g.register_view(v.get());
+		for (auto& c: r.controllers) g.register_controller(c.get());
 		
-		g.run(); // runs until all views/controllers are done, then asks model to stop
+		// starts model, runs until all views/controllers are done, then asks model to stop
+		g.run();
 	}
 	
 	return 0;

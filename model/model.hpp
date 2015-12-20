@@ -43,9 +43,6 @@ namespace model {
 
 class Model;
 
-// Multimethods stuff
-using yorel::multi_methods::virtual_;
-MULTI_METHOD(_handleEvent, void, si::model::Model*, virtual_<si::Event>&);
 
 // A level. Basically a POD class with a fancy constructor
 class Level {
@@ -79,6 +76,10 @@ private:
 };
 
 
+// Multimethods stuff
+using yorel::multi_methods::virtual_;
+MULTI_METHOD(_handle_event, void, si::model::Model*, const virtual_<si::Event>&);
+
 
 // The model.
 class Model {
@@ -88,19 +89,24 @@ public:
 	Model(const picojson::value& conf, Game* g);
 	
 	// loop() does two things:
-	//   - check for Events on the CCQ
+	//   - check for Events from controllers or the game
 	//   - tick (using the stopwatch)
 	void loop();
 	
 	std::vector<std::thread*> start();
 	
-	// iterate over all entities
+	// Generators are one of my favorite things in Python, too bad we don't have that in C++!
+	// Generators would mean I could organize my data the way I wanted (not a bunch of Entity* 
+	// pointers), and when a View needs to iterate over all of them, I could write a simple
+	// function that simply yields all the Entity pointers. The compiler may even be able
+	// to 'unroll' the loop using the generator, which would be a huge benefit.
+	// Instead, we have lousy iterators. This iterates over all entities.
 	EntityRange all_entities() const;
 	friend class EntityRange;
 	
 	// make sure all the handlers can actually access this class
 	template <typename T>
-	friend class _handleEvent_specialization;
+	friend class _handle_event_specialization;
 	
 	// Important data about the game
 	// May be accessed by anyone
@@ -109,10 +115,10 @@ public:
 	State get_state() const { return state; }
 	
 private:
-	void handleEvent(Event* e);
+	void handle_event(Event* e);
 	
-	void loadLevel(Level& l);
-	void unloadLevel();
+	void load_level(Level& l);
+	void unload_level();
 	
 	// Actual gameplay stuff
 	unsigned int max_players;
@@ -123,9 +129,9 @@ private:
 	std::map<unsigned int, std::unique_ptr<Player>> players;
 	bool victory = false;
 	
-	void Playing();
-	void Wait();
-	void Recap();
+	void playing();
+	void wait();
+	void recap();
 	State state = WAIT;
 	
 	Game* game;

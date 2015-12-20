@@ -10,7 +10,7 @@ void Sleepable::sleep() {
 
 void Sleepable::wake_up() {
 	std::unique_lock<std::mutex> locker(sleep_lock);
-	sleep_cv.notify_one();
+	sleep_cv.notify_all();
 }
 
 

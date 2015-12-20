@@ -6,41 +6,44 @@
 #include "controller/sfml/sfmlcontroller.hpp"
 #include "view/sfml/sfmlview.hpp"
 
+using namespace si;
 using namespace si::vc;
 
 
-std::vector<std::thread*> SfmlBase::start() {
-	assert(handle != nullptr);
-	return handle->start();
+void SfmlVc::init(int width, int height) {
+	window = new sf::RenderWindow(sf::VideoMode(width, height), "Space Invaders");
 }
 
-
-SfmlVc::SfmlVc(unsigned int width, unsigned int height):
-		window(sf::VideoMode(width, height), "Space Invaders") {
-	// drawing could be done from another thread, so disable the window
-	window.setActive(false);
+SfmlVc::~SfmlVc() {
+	delete window;
 }
 
-void SfmlVc::loop() {
+void SfmlVc::loop(util::Flag& f) {
+	init();
 	std::cout << "SfmlVc Input loop started\n";
+	window->setActive(false); // drawing happens from view
+	f.set();
 	if (controller != nullptr) {
 		sf::Event e;
-		while (window.isOpen() and window.waitEvent(e)) {
-			if (e.type == sf::Event::Closed) {
-				std::cout << "SfmlVc got close Event\n";
-				controller->handleEvent(new si::SfmlExit);
-				return;
-			} else {
-				controller->handleEvent(new si::SfmlInput(e));
+		while (window->isOpen() and window->waitEvent(e)) {
+			if (e.type != sf::Event::MouseMoved) {
+				if (e.type == sf::Event::Closed) {
+					std::cout << "SfmlVc got close Event\n";
+					controller->handle_event(new si::SfmlExit);
+					return;
+				} else {
+					controller->handle_event(new si::SfmlInput(e));
+				}
 			}
 		}
 	} else {
-		view->state = si::model::PLAYING;
+		// you could call this a mini-controller because sfml needs one
+		view->state = si::model::WAIT;
 		sf::Event e;
-		while (window.isOpen() and window.waitEvent(e)) {
+		while (window->isOpen() and window->waitEvent(e)) {
 			if (e.type == sf::Event::Closed) {
 				std::cout << "SfmlVc got close Event\n";
-				view->handleEvent(new SfmlExit);
+				view->handle_event(new si::SfmlExit);
 				//if (window.isOpen()) window.close();
 				return;
 			}
@@ -49,9 +52,11 @@ void SfmlVc::loop() {
 }
 
 std::vector<std::thread*> SfmlVc::start() {
+	util::Flag f;
 	if (running_thread != nullptr) return {running_thread};
-	std::thread* t = new std::thread(&SfmlVc::loop, this);
+	std::thread* t = new std::thread(&SfmlVc::loop, this, std::ref(f));
 	running_thread = t;
+	f.wait();
 	return {t};
 }
 

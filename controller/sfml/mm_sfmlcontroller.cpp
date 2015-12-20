@@ -10,8 +10,13 @@ using namespace si::view;
 namespace si {
 namespace controller {
 
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* m, const Event& e) {
+	std::cout << "SfmlView: Unhandled Event occured\n";
+} END_SPECIALIZATION;
+
+
 // A rather big specialization, because it handles all sfml events
-BEGIN_SPECIALIZATION(_handleEvent, void, SfmlController* c, SfmlInput& e) {
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const SfmlInput& e) {
 	sf::Event se = e.event;
 	switch (c->state) {
 		case model::State::WAIT: {
@@ -22,12 +27,12 @@ BEGIN_SPECIALIZATION(_handleEvent, void, SfmlController* c, SfmlInput& e) {
 						case sf::Keyboard::Space:
 							c->my_player = c->game->get_player();
 							if (c->my_player < 0) {
-								c->handle->get_view()->handleEvent(new DisplayText("Sorry, there are no more spots available", DisplayState::ERROR));
+								c->handle->view->handle_event(new DisplayText("Sorry, there are no more spots available", DisplayState::ERROR));
 								std::cout << "No more players available\n";
 							} else {
 								std::cout << "got player " << c->my_player << "\n";
-								c->game->notifyModel(new CreatePlayer(c->my_player));
-								c->handle->get_view()->handleEvent(new SfmlReady);
+								c->output_queue.push(new CreatePlayer(c->my_player));
+								c->handle->view->handle_event(new SfmlReady);
 								c->state = model::PLAYING;
 								return;
 							}
@@ -46,13 +51,13 @@ BEGIN_SPECIALIZATION(_handleEvent, void, SfmlController* c, SfmlInput& e) {
 				case sf::Event::KeyPressed:
 					switch(se.key.code) {
 						case sf::Keyboard::Left:
-							c->game->notifyModel(new SetDirection(c->my_player, util::WEST));
+							c->output_queue.push(new SetDirection(c->my_player, util::WEST));
 							break;
 						case sf::Keyboard::Right:
-							c->game->notifyModel(new SetDirection(c->my_player, util::EAST));
+							c->output_queue.push(new SetDirection(c->my_player, util::EAST));
 							break;
 						case sf::Keyboard::Space:
-							c->game->notifyModel(new Fire(c->my_player));
+							c->output_queue.push(new Fire(c->my_player));
 						default:
 							break;
 					}
@@ -61,7 +66,7 @@ BEGIN_SPECIALIZATION(_handleEvent, void, SfmlController* c, SfmlInput& e) {
 					switch(se.key.code) {
 						case sf::Keyboard::Left:
 						case sf::Keyboard::Right:
-							c->game->notifyModel(new SetDirection(c->my_player, util::HOLD));
+							c->output_queue.push(new SetDirection(c->my_player, util::HOLD));
 							break;
 						default:
 							break;
@@ -93,29 +98,27 @@ BEGIN_SPECIALIZATION(_handleEvent, void, SfmlController* c, SfmlInput& e) {
 } END_SPECIALIZATION;
 
 
-BEGIN_SPECIALIZATION(_handleEvent, void, SfmlController* c, ModelStateChange& e) {
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const ModelStateChange& e) {
 	// we wait for a player whether model is already going or not
-// 	if (c->state != model::WAIT) {
+// 	if (c->state != model::PRE_WAIT) {
 // 		c->state = e.state;
 // 	}
 	std::cout << "SfmlController: Got ModelStateChange\n";
 } END_SPECIALIZATION;
 
-BEGIN_SPECIALIZATION(_handleEvent, void, SfmlController* c, SfmlExit& e) {
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const SfmlExit& e) {
 	c->state = model::EXIT;
-	c->game->notifyModel(new ReleasePlayer(c->my_player));
-	c->handle->get_view()->handleEvent(e.clone());
+	c->output_queue.push(new ReleasePlayer(c->my_player));
+	c->handle->view->handle_event(e.clone());
+	c->done.set();
 } END_SPECIALIZATION;
 
 
-BEGIN_SPECIALIZATION(_handleEvent, void, SfmlController* c, ModelStart& e) {
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const ModelStart& e) {
 	std::cout << "SfmlController: got ModelStart\n";
-	c->handle->get_view()->handleEvent(new DisplayText("Press space to start\n"));
+	c->handle->view->handle_event(new ModelStart); // it is possible it will get this message twice, that doesn't matter though
+	c->handle->view->handle_event(new DisplayText("Press space to start\n"));
 	c->state = model::WAIT;
-} END_SPECIALIZATION;
-
-BEGIN_SPECIALIZATION(_handleEvent, void, SfmlController* m, Event& e) {
-	std::cout << "SfmlView: Unhandled Event occured\n";
 } END_SPECIALIZATION;
 
 
