@@ -34,8 +34,8 @@ void SfmlView::redraw() {
 }
 
 void SfmlView::simple_draw(sf::Texture& tex, const model::Entity& e) {
-	sf::Sprite s;
-	s.setTexture(tex);
+	sf::RectangleShape s(sf::Vector2f(e.size.x, e.size.y));
+	s.setTexture(&tex);
 	//s.setTextureRect(sf::IntRect(e.pos.x, e.pos.y, e.size.x, e.size.y));
 	s.setPosition(e.pos.x, e.pos.y);
 	handle->window->draw(s);

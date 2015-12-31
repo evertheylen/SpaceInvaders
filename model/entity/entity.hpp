@@ -73,6 +73,7 @@ public:
 	
 	Player(double _x, double _y): Actor(_x, _y) {
 		MM_INIT();
+		mov.speed = 0.2;
 		size.x = 52;
 		size.y = 32;
 	}
@@ -85,11 +86,16 @@ class Alien: public Actor {
 public:
 	MM_CLASS(Alien, Actor);
 	
-	Alien(double _x, double _y): Actor(_x, _y) {
+	Alien(double _x, double _y, unsigned int _col, unsigned int _row): 
+			Actor(_x, _y), col(_col), row(_row) {
 		MM_INIT();
+		
 		size.x = 48;
 		size.y = 32;
 	}
+	
+	unsigned int col;
+	unsigned int row;
 };
 
 
@@ -99,8 +105,8 @@ public:
 	
 	Bullet(Player* _p): p(_p) {
 		MM_INIT();
-		size.x = 11;
-		size.y = 28;
+		size.x = 2;
+		size.y = 14;
 		pos.x = p->pos.x + ((p->size.x - size.x)/2);
 		pos.y = p->pos.y - size.y;
 		mov = Movement(0.4, util::Vector2D_d(0, -1));

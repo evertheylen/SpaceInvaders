@@ -15,6 +15,8 @@ namespace si {
 namespace model {
 
 
+// === Event handling =============================================================================
+
 void Model::handle_event(Event* e) {
 	_handle_event(this, *e);
 }
@@ -26,11 +28,17 @@ BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const Event& e) {
 
 
 BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const CreatePlayer& e) {
-	Player* p = new Player(200, 550); // TODO level
-	p->mov.speed = 0.2;
-	m->entities.insert(p);
+	// TODO check state?
+	Player* p = new Player(0, 0);
 	m->players[e.ID] = p;
-	m->handle_event(new Ready);
+	m->handle_event(new Ready); // first Ready up (always synchronously)
+	if (Level* l = m->get_current_level()) {
+		p->pos.x = (l->width*0.125) + (((double(l->width)*0.75) / double(m->max_players-1))*e.ID) - (p->size.x/2);
+		p->pos.y = l->height - 50;
+		m->entities.insert(p);
+	} else {
+		std::cout << "Model: trying to create player without a level\n";
+	}
 } END_SPECIALIZATION;
 
 
@@ -56,6 +64,7 @@ BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const Fire& e) {
 			m->saved_entities.insert(b);
 			// notify views that a player has shot
 			m->game->notify_views(new PlayerShoots(p));
+			//p->b = b;
 		} else {
 			std::cout << "Model: Player already has bullet\n";
 		} 
@@ -88,7 +97,7 @@ BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const Ready& e) {
 			// level exists, go ahead
 			std::cout << "Model: Loading level " << m->current_level << "\n";
 			m->load_level(m->levels[m->current_level]);
-			m->game->notify_all(new LevelStart);
+			m->game->notify_all(new LevelStart(&m->levels[m->current_level]));
 			m->state = model::PLAYING;
 		} else {
 			std::cout << "Model: Game is already over, no need to ready a new level\n";
@@ -99,13 +108,13 @@ BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const Ready& e) {
 	} else {
 		std::cout << "Model: Can't Ready when we're already playing\n";
 		// this does however tell us that there are views/controllers out there who are not aware of our state
-		m->game->notify_all(new LevelStart);
+		m->game->notify_all(new LevelStart(m->get_current_level()));
 	}
 } END_SPECIALIZATION;
 
 
 
-// Collisions
+// === Collisions =================================================================================
 
 // Don't forget to SYMMETRIC_SPEC(_collide, void, Model* m, Type2, Type1)
 
@@ -115,6 +124,9 @@ BEGIN_SPECIALIZATION(_collide, void, Model* m, Entity& a, Entity& b) {
 
 
 BEGIN_SPECIALIZATION(_collide, void, Model* m, Alien& a, Bullet& b) {
+	std::cout << "Model: Collision between Alien and Bullet\n";
+	std::cout << "Bullet: " << b.pos << " --> " << b.pos + b.size << "\n";
+	std::cout << "Alien: " << a.pos << " --> " << a.pos + a.size << "\n";
 	a.killme = true;
 	b.killme = true;
 } END_SPECIALIZATION;
@@ -123,6 +135,69 @@ BEGIN_SPECIALIZATION(_collide, void, Model* m, Alien& a, Bullet& b) {
 BEGIN_SPECIALIZATION(_collide, void, Model* m, Bullet& b, Alien& a) {
 	GET_SPECIALIZATION(_collide, void, Model*, Alien&, Bullet&)(m, a, b);
 } END_SPECIALIZATION
+
+
+// === Killing ====================================================================================
+// return whether or not this object should be deleted
+
+BEGIN_SPECIALIZATION(_kill, bool, Model* m, Entity& e) {
+	return true; // just kill
+} END_SPECIALIZATION;
+
+
+BEGIN_SPECIALIZATION(_kill, bool, Model* m, Alien& e) {
+	m->alien_grid[e.col][e.row] = nullptr;
+	
+	// check if this one is a bottom one, if so, replace with one above (unless there is none --> nullptr)
+	if (m->bottom_aliens[e.col] == &e) {
+		std::cout << "Model: killing bottom alien on row " << e.row << "\n";
+		m->bottom_aliens[e.col] = nullptr;
+		for (int row_above = e.row-1; row_above>=0; row_above--) {
+			if (m->alien_grid[e.col][row_above] != nullptr) {
+				m->bottom_aliens[e.col] = m->alien_grid[e.col][row_above];
+				break;
+			}
+		}
+	}
+	
+	// The rule of 2: If you have to do something more than twice, encapsulate it
+	// This does not violate that rule :)
+	
+	// check if this is topleftmost one
+	if (m->topleftmost == &e) {
+		std::cout << "Model: killing topleftmost\n";
+		m->topleftmost = nullptr;
+		// search this column (top to bottom), then the one to the right, ...
+		for (int col = e.col; col < m->alien_grid.size(); col++) {
+			for (int row = 0; row < m->alien_grid[col].size(); row++) {
+				if (m->alien_grid[col][row] != nullptr) {
+					m->topleftmost = m->alien_grid[col][row];
+					goto done_topleftmost;
+				}
+			}
+		}
+	}
+	done_topleftmost:
+	
+	// check if this is toprightmost one
+	if (m->toprightmost == &e) {
+		std::cout << "Model: killing toprightmost\n";
+		m->toprightmost = nullptr;
+		// search this column (top to bottom), then the one to the left, ...
+		for (int col = e.col; 0 <= col; col--) {
+			for (int row = 0; row < m->alien_grid[col].size(); row++) {
+				if (m->alien_grid[col][row] != nullptr) {
+					m->toprightmost = m->alien_grid[col][row];
+					goto done_toprightmost;
+				}
+			}
+		}
+	}
+	done_toprightmost:
+	
+	return true;
+} END_SPECIALIZATION;
+
 
 
 }

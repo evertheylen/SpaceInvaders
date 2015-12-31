@@ -7,6 +7,7 @@ dependencies["headers"] = [
 	"model/entity>>headers",
 	"util/stopwatch>>headers",
 	"util/parser>>headers",
+	"util/periodical>>headers",
 ]
 
 dependencies["build_objects"] = [
@@ -32,6 +33,7 @@ dependencies["build_objects"] = [
 #include "model/entity/entity.hpp"
 #include "util/stopwatch/stopwatch.hpp"
 #include "util/parser/parser.hpp"
+#include "util/periodical/periodical.hpp"
 
 #include "model_state.hpp"
 
@@ -82,6 +84,7 @@ MULTI_METHOD(_handle_event, void, si::model::Model*, const virtual_<si::Event>&)
 
 MULTI_METHOD(_collide, void, si::model::Model*, virtual_<Entity>&, virtual_<Entity>&);
 
+MULTI_METHOD(_kill, bool, si::model::Model*, virtual_<Entity>&);
 
 // The model.
 class Model {
@@ -113,12 +116,16 @@ public:
 	template <typename T>
 	friend class _collide_specialization;
 	
+	template <typename T>
+	friend class _kill_specialization;
+	
 	// Important data about the game
 	// May be accessed by anyone
 	std::set<unsigned int> leftover_players;
 	
 	State get_state() const { return state; }
 	bool game_won() const { return victory; }
+	Level* get_current_level();
 	
 private:
 	void handle_event(Event* e);
@@ -129,14 +136,25 @@ private:
 	void check_collisions(Entity* e);
 	bool check_collision(Entity* a, Entity* b);
 	
-	// Actual gameplay stuff
+	// === Actual gameplay data ===
 	unsigned int max_players;
 	std::vector<Level> levels;
 	int current_level = -1;
+	Entity world; // spans the entire world
+	
+	util::Periodical alien_periodical; // when to move (not using movement vector, move in steps)
+	std::vector<std::vector<Alien*>> alien_grid; // alien_grid[col][row]  (like (x,y) coords, may contain nullptrs)
+	Alien* topleftmost = nullptr;
+	Alien* toprightmost = nullptr;
+	std::vector<Alien*> bottom_aliens; // may contain nullptr's, index is column
+		// because of the inverted y axis, this means the aliens here have the highest y of their column
+	
 	std::set<Entity*> entities;
 	std::set<Entity*> saved_entities;  // entities saved here
 	std::map<unsigned int, Player*> players;  // and here 
 	bool victory = false;
+	
+	// ======
 	
 	void playing();
 	void wait();

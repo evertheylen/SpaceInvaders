@@ -122,6 +122,9 @@ void Model::playing() {
 			if (e->mov.dir.length() > 0) {
 				e->mov.perform(duration, e->pos);
 				check_collisions(e);
+				if (not check_collision(e, &world)) {
+					e->killme = true; // out of world
+				}
 			}
 		}
 		
@@ -134,9 +137,11 @@ void Model::playing() {
 		// Again, this would be easier with generators
 		for (auto iter = saved_entities.begin(); iter != saved_entities.end(); ) {
 			if ((*iter)->killme) {
-				delete *iter;
-				entities.erase(*iter);
-				saved_entities.erase(iter++);
+				if (_kill(this, *(*iter))) {
+					delete *iter;
+					entities.erase(*iter);
+					saved_entities.erase(iter++);
+				}
 			} else {
 				++iter;
 			}
@@ -144,9 +149,11 @@ void Model::playing() {
 		
 		for (auto iter = players.begin(); iter != players.end(); ) {
 			if (iter->second->killme) {
-				entities.erase(iter->second);
-				delete iter->second;
-				players.erase(iter++);
+				if (_kill(this, *(iter->second))) {
+					entities.erase(iter->second);
+					delete iter->second;
+					players.erase(iter++);
+				}
 			} else {
 				++iter;
 			}
@@ -180,11 +187,11 @@ bool Model::check_collision(Entity* a, Entity* b) {
 	double ymin = b->pos.y;
 	double ymax = b->pos.y + b->size.y;
 	// is there a point of a (corners) within b?
-	#define check_in_b(point_x, point_y) if ((xmin <= point_x and point_x <= xmax) and (ymin <= point_y and point_y <= ymax)) return true; 
+	#define check_in_b(point_x, point_y) if ((xmin <= point_x and point_x <= xmax) and (ymin <= point_y and point_y <= ymax)) return true
 	check_in_b(a->pos.x, a->pos.y);
 	check_in_b(a->pos.x + a->size.x, a->pos.y);
 	check_in_b(a->pos.x, a->pos.y + a->size.y);
-	check_in_b(a->pos.x + a->size.y, a->pos.y + a->size.y);
+	check_in_b(a->pos.x + a->size.x, a->pos.y + a->size.y);
 	return false;
 	#undef check_in_b
 }
@@ -200,26 +207,65 @@ void Model::check_collisions(Entity* a) {
 	}
 }
 
+Level* Model::get_current_level() {
+	if (0 <= current_level and current_level < levels.size()) {
+		return &levels[current_level];
+	} else {
+		return nullptr;
+	}
+}
 
 
 void Model::load_level(Level& l) {
 	unload_level();
+	// set world entity for out-of-bounds checking
+	world = Entity(0,0);
+	world.size.x = l.width;
+	world.size.y = l.height;
+	
 	// add players
 	for (auto& it: players) {
 		entities.insert(it.second);
 	}
-	// create aliens TODO
-	saved_entities.insert(new Alien(350, 350));
+	
+	// create aliens
+	bottom_aliens.assign(l.alien_cols, nullptr);
+	alien_grid.assign(l.alien_cols, {});
+	for (auto& row: alien_grid) row.assign(l.alien_rows, nullptr);
+	
+	double x = 50;
+	double add_to_x = 75;
+	double add_to_y = 60;
+	for (int col=0; col<l.alien_cols; col++) {
+		double y = 100;
+		for (int row=0; row<l.alien_rows; row++) {
+			Alien* a = new Alien(x, y, col, row);
+			alien_grid[col][row] = a;
+			saved_entities.insert(a);
+			entities.insert(a);
+			y += add_to_y;
+		}
+		bottom_aliens.at(col) = alien_grid[col][l.alien_rows-1];
+		x += add_to_x;
+	}
+	topleftmost = alien_grid[0][0];
+	toprightmost = alien_grid[l.alien_cols-1][0];
+	
 	for (auto& e: saved_entities) {
 		entities.insert(e);
 	}
 }
+
 
 void Model::unload_level() {
 	// not players
 	for (Entity* e: saved_entities) {
 		delete e;
 	}
+	alien_grid.clear();
+	bottom_aliens.clear();
+	topleftmost = nullptr;
+	toprightmost = nullptr;
 	saved_entities.clear();
 	entities.clear();
 }

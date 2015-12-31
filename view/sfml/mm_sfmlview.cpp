@@ -64,7 +64,7 @@ BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const ModelStart& e) {
 		if (not v->concurrent and v->handle->controller == nullptr)
 			v->handle->init();
 		v->handle->window->setActive(true);
-		v->handle->window->clear(sf::Color::Blue);
+		v->handle->window->clear(sf::Color::Black);
 		v->handle->window->display();
 		v->state = model::WAIT;
 		std::cout << "SfmlView: ModelStart handled\n";
@@ -86,6 +86,7 @@ BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const Recap& e) {
 
 BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const LevelStart& e) {
 	std::cout << "SfmlView starts playing\n";
+	v->handle->window->setSize(sf::Vector2u(e.level->width, e.level->height));
 	v->state = model::PLAYING;
 } END_SPECIALIZATION;
 
