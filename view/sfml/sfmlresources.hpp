@@ -17,6 +17,8 @@ public:
 		assert(medium_alien.loadFromFile("data/textures/medium.png"));
 		assert(big_alien.loadFromFile("data/textures/big.png"));
 		
+		assert(bullet.loadFromFile("data/textures/bullet.png"));
+		
 		assert(font.loadFromFile("data/fonts/roboto.ttf"));
 		
 		assert(background.loadFromFile("data/textures/background.png"));
@@ -26,6 +28,12 @@ public:
 	sf::Texture small_alien;
 	sf::Texture medium_alien;
 	sf::Texture big_alien;
+	
+	sf::Texture bullet;
+	
+	sf::Texture small_bomb;
+	sf::Texture medium_bomb;
+	sf::Texture big_bomb;
 	
 	sf::Font font;
 	

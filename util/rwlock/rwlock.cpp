@@ -18,7 +18,7 @@ TimepointT RWLock::new_timestamp() {
 
 // if this returns false, the lock has been closed.
 bool RWLock::read_lock(TimepointT& stamp) {
-	if (closed) return true;
+	if (closed) return false;
 	while (true) { // spinning all day, all night
 		if (stamp < last_write.load()) {
 			pthread_rwlock_rdlock(lock);
@@ -46,14 +46,12 @@ bool RWLock::write_lock() {
 }
 
 void RWLock::write_unlock() {
-	read = false;
 	pthread_rwlock_unlock(lock);
 	// BUG sometimes the readers who are waiting are starved for a significant time
 }
 
 void RWLock::read_unlock(TimepointT& stamp) {
 	stamp = clock.now();
-	read = true;
 	pthread_rwlock_unlock(lock);
 }
 

@@ -4,7 +4,7 @@
 namespace si {
 namespace model {
 
-enum State { PRE_WAIT, WAIT, PLAYING, RECAP, EXIT };
+enum State { PRE_WAIT, WAIT, PLAYING, RECAP, GAMEOVER, EXIT };
 
 }
 }

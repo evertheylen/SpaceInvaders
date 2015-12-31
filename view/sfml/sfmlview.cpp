@@ -6,10 +6,12 @@
 using namespace si;
 using namespace si::view;
 
+
 SfmlView::SfmlView(Game* g, bool _concurrent): game(g), concurrent(_concurrent) {
 	backgroundsprite.setTextureRect(sf::IntRect(0,0,800,600));
 	backgroundsprite.setTexture(res.background);
 }
+
 
 std::vector<std::thread*> SfmlView::start() {
 	assert(handle != nullptr);
@@ -22,23 +24,23 @@ std::vector<std::thread*> SfmlView::start() {
 	}
 }
 
+
 void SfmlView::redraw() {
 	handle->window->draw(backgroundsprite);
 	
-	// initialize all sprites
-	for (const auto& e: game->get_model().all_entities()) {
-		sprites[e] = sf::Sprite();
-		//sprites[e].setTextureRect(sf::IntRect(e->x, e->y, 64, 64));
-		// TODO replace with yomm
-		if (dynamic_cast<si::model::Player*>(e)) {
-			sprites[e].setTexture(res.player);
-		} else {
-			sprites[e].setTexture(res.big_alien);
-		}
-		sprites[e].setPosition(e->pos.x, e->pos.y);
-		handle->window->draw(sprites[e]);
+	for (const model::Entity* e: game->get_model().all_entities()) {
+		_draw(this, *e);
 	}
 }
+
+void SfmlView::simple_draw(sf::Texture& tex, const model::Entity& e) {
+	sf::Sprite s;
+	s.setTexture(tex);
+	//s.setTextureRect(sf::IntRect(e.pos.x, e.pos.y, e.size.x, e.size.y));
+	s.setPosition(e.pos.x, e.pos.y);
+	handle->window->draw(s);
+}
+
 
 void SfmlView::handle_event(Event* e) {
 	std::cerr << " [ V<  M   C ] SfmlView received: " << e->name() << "\n";
@@ -53,35 +55,62 @@ void SfmlView::handle_event(Event* e) {
 	}
 }
 
+
 void SfmlView::loop() {
+	while (true) switch (state) {
+		case model::PLAYING:
+			game_mode();
+			break;
+		case model::EXIT:
+			return;
+		default:
+			text_mode();
+			break;
+	}
+}
+
+
+void SfmlView::game_mode() {
 	auto ts = game->entity_lock.new_timestamp();
-	while (true) {
+	while (state == model::PLAYING) {
 		if (game->entity_lock.read_lock(ts)) {
-			if (state == model::PLAYING) {
-				handle->window->clear();
-				redraw(); // always 'expect' a tick
+			handle->window->clear();
+			redraw(); // always 'expect' a tick
 				
-				// stats
-				if (ticks%50001 == 0) {
-					std::cout << "SfmlView: Did 50000 ticks\n";
-					ticks = 1;
-				} else {
-					ticks++;
-				}
+			// stats
+			if (ticks%50001 == 0) {
+				std::cout << "SfmlView: Did 50000 ticks\n";
+				ticks = 1;
+			} else {
+				ticks++;
 			}
 			
-			if (not queue.empty()) {
+			while (not queue.empty()) {
 				Event* e = queue.pop();
 				_handle_event(this, *e);
 				delete e;
 			}
 			game->entity_lock.read_unlock(ts);
-			if (state == model::EXIT) {
-				return; // thereby closing this sfmlview
-			}
-			if (state == model::PLAYING) handle->window->display();
+			
+			handle->window->display();
+		} else {
+			std::cout << "SfmlView: read_lock has been closed\n";
+			return;
 		}
 	}
 }
+
+
+void SfmlView::text_mode() {
+	while (state != model::PLAYING and state != model::EXIT) {
+		while (not queue.empty()) {
+			Event* e = queue.pop();
+			_handle_event(this, *e);
+			delete e;
+		}
+	}
+	std::cout << "SfmlView: exiting text mode\n";
+}
+
 
 

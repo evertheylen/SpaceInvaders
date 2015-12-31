@@ -4,6 +4,7 @@
 
 using namespace si;
 using namespace si::view;
+using namespace si::model;
 
 namespace si {
 namespace view {
@@ -33,20 +34,6 @@ BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const Tick& e) {
 } END_SPECIALIZATION;
 
 
-BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const ModelStart& e) {
-	std::cout << "SfmlView: got ModelStart\n";
-	if (v->state != model::PRE_WAIT) {
-		if (not v->concurrent and v->handle->controller == nullptr)
-			v->handle->init();
-		v->handle->window->setActive(true);
-		v->handle->window->clear(sf::Color::Blue);
-		v->handle->window->display();
-		v->state = model::WAIT;
-	}
-	std::cout << "SfmlView: ModelStart done\n";
-} END_SPECIALIZATION;
-
-
 BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const DisplayText& e) {
 	std::cout << "SfmlView: display text " << e.message << "\n";
 	sf::Text text;
@@ -70,26 +57,61 @@ BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const SfmlExit& e) {
 } END_SPECIALIZATION;
 
 
-BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const SfmlReady& e) {
+
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const ModelStart& e) {
+	std::cout << "SfmlView: got ModelStart\n";
+	if (v->state != model::PRE_WAIT) {
+		if (not v->concurrent and v->handle->controller == nullptr)
+			v->handle->init();
+		v->handle->window->setActive(true);
+		v->handle->window->clear(sf::Color::Blue);
+		v->handle->window->display();
+		v->state = model::WAIT;
+		std::cout << "SfmlView: ModelStart handled\n";
+	}
+} END_SPECIALIZATION;
+
+
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const GameStop& e) {
+	v->state = model::GAMEOVER;
+	std::cout << "SfmlView: Game Over received, value = " << e.victory << "\n";
+} END_SPECIALIZATION;
+
+
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const Recap& e) {
+	std::cout << "SfmlView stops playing\n";
+	v->state = model::RECAP;
+} END_SPECIALIZATION;
+
+
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const LevelStart& e) {
 	std::cout << "SfmlView starts playing\n";
 	v->state = model::PLAYING;
 } END_SPECIALIZATION;
 
 
-BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const LevelStart& e) {
-	if (v->state == model::WAIT) {
-		std::cout << "We wait for the controller\n";
-	} else {
-		std::cout << "SfmlView starts playing\n";
-		v->state = v->game->get_model().get_state();
-	}
+
+// Drawing
+
+BEGIN_SPECIALIZATION(_draw, void, SfmlView* v, const Entity& e) {
+	std::cout << "SfmlView: trying to draw an entity without specialization\n";
 } END_SPECIALIZATION;
 
 
-BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const LevelEnd& e) {
-	std::cout << "SfmlView stops playing\n";
-	v->state = model::RECAP;
+BEGIN_SPECIALIZATION(_draw, void, SfmlView* v, const Player& e) {
+	v->simple_draw(v->res.player, e);
 } END_SPECIALIZATION;
+
+
+BEGIN_SPECIALIZATION(_draw, void, SfmlView* v, const Alien& e) {
+	v->simple_draw(v->res.big_alien, e);
+} END_SPECIALIZATION;
+
+
+BEGIN_SPECIALIZATION(_draw, void, SfmlView* v, const Bullet& e) {
+	v->simple_draw(v->res.bullet, e);
+} END_SPECIALIZATION;
+
 
 
 }

@@ -49,6 +49,7 @@ public:
 	// --- communication between M/V/C ---
 	// The model pushes messages to both views (for nearly all output) and controllers
 	// (for important state changes, eg. "the game is over stop processing input please").
+	void notify_all(Event* e); // for important state changes
 	void notify_controllers(Event* e);
 	void notify_views(Event* e);
 	void notify_views(Tick* e); // simple optimization (Tick is subclass of Event)
@@ -70,6 +71,9 @@ public:
 	// RWLock for the entities (TODO private?)
 	RWLock entity_lock;
 	
+	
+	// sadly, a 'hack' around pthread's bugs
+	bool has_cc_viewers() { return synchr_views.size() < views.size(); }
 	
 private:
 	

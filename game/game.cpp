@@ -20,6 +20,12 @@ void Game::notify_controllers(Event* e) {
 	}
 }
 
+void Game::notify_all(Event* e) {
+	notify_views(e->clone());
+	notify_controllers(e->clone());
+	delete e;
+}
+
 
 void Game::notify_views(Event* e) {
 	std::cerr << " [ V<--M   C ] Passing to all Views: " << e->name() << "\n";

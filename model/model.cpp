@@ -81,6 +81,7 @@ void Model::loop() {
 				playing();
 				break;
 			case State::RECAP:
+			case State::GAMEOVER:
 				recap();
 				break;
 			case State::EXIT:
@@ -90,6 +91,7 @@ void Model::loop() {
 }
 
 void Model::playing() {
+	bool wait = game->has_cc_viewers();
 	util::Stopwatch::TimePoint current_tick = watch.now();
 	util::Stopwatch::TimePoint prev_tick;
 	
@@ -109,21 +111,54 @@ void Model::playing() {
 			ticks++;
 		}
 		
+		// update views
+		// Could be concurrent, could be blocking. The View is responsible for that.
+		game->notify_views(new Tick);
+		
 		game->entity_lock.write_lock();
 		
+		// --- Actual calculations of next 'frame' ---
 		for (Entity* e: entities) {
-			e->mov.perform(duration, e->pos);
+			if (e->mov.dir.length() > 0) {
+				e->mov.perform(duration, e->pos);
+				check_collisions(e);
+			}
 		}
 		
 		// handle Events, until nullptr
 		while (Event* e = game->get_input_event()) {
 			handle_event(e);
 		}
+		
+		// delete entities
+		// Again, this would be easier with generators
+		for (auto iter = saved_entities.begin(); iter != saved_entities.end(); ) {
+			if ((*iter)->killme) {
+				delete *iter;
+				entities.erase(*iter);
+				saved_entities.erase(iter++);
+			} else {
+				++iter;
+			}
+		}
+		
+		for (auto iter = players.begin(); iter != players.end(); ) {
+			if (iter->second->killme) {
+				entities.erase(iter->second);
+				delete iter->second;
+				players.erase(iter++);
+			} else {
+				++iter;
+			}
+		}
+		
 		game->entity_lock.write_unlock();
 		
-		// update views
-		// Could be concurrent, could be blocking. The View is responsible for that.
-		game->notify_views(new Tick);
+		// BUG this is pthread's fault. While there are readers waiting, it does not give them a chance,
+		// although it is set to PREFER_READER_NP
+		if (wait) {
+			std::this_thread::sleep_for(std::chrono::nanoseconds(5000));
+		}
 	}
 }
 
@@ -138,11 +173,40 @@ void Model::recap() {
 	
 }
 
+// note: assumes a is the smaller object
+bool Model::check_collision(Entity* a, Entity* b) {
+	double xmin = b->pos.x;
+	double xmax = b->pos.x + b->size.x;
+	double ymin = b->pos.y;
+	double ymax = b->pos.y + b->size.y;
+	// is there a point of a (corners) within b?
+	#define check_in_b(point_x, point_y) if ((xmin <= point_x and point_x <= xmax) and (ymin <= point_y and point_y <= ymax)) return true; 
+	check_in_b(a->pos.x, a->pos.y);
+	check_in_b(a->pos.x + a->size.x, a->pos.y);
+	check_in_b(a->pos.x, a->pos.y + a->size.y);
+	check_in_b(a->pos.x + a->size.y, a->pos.y + a->size.y);
+	return false;
+	#undef check_in_b
+}
+
+
+void Model::check_collisions(Entity* a) {
+	for (Entity* b: entities) {
+		if (a != b) {
+			if (check_collision(a, b) or check_collision(b, a)) {
+				_collide(this, *a, *b);
+			}
+		}
+	}
+}
+
+
+
 void Model::load_level(Level& l) {
 	unload_level();
 	// add players
 	for (auto& it: players) {
-		entities.insert(it.second.get());
+		entities.insert(it.second);
 	}
 	// create aliens TODO
 	saved_entities.insert(new Alien(350, 350));

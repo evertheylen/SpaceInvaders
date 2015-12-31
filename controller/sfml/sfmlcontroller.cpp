@@ -45,7 +45,12 @@ Event* SfmlController::get_event() {
 		sf::Event se;
 		if (handle->window->pollEvent(se)) {
 			// handle this event as if it was input
-			_handle_event(this, SfmlInput(se));
+			if (se.type == sf::Event::Closed) {
+				std::cout << "SfmlVc got close Event\n";
+				handle_event(new si::SfmlExit);
+			} else {
+				handle_event(new si::SfmlInput(se));
+			}
 			// resulting output should be on the output_queue
 			if (not output_queue.empty()) {
 				return output_queue.pop();

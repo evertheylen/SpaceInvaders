@@ -12,6 +12,7 @@ using namespace si::vc;
 
 void SfmlVc::init(int width, int height) {
 	window = new sf::RenderWindow(sf::VideoMode(width, height), "Space Invaders");
+	window->setActive(false);
 }
 
 SfmlVc::~SfmlVc() {

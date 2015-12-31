@@ -45,6 +45,8 @@ class SfmlView;
 using yorel::multi_methods::virtual_;
 MULTI_METHOD(_handle_event, void, si::view::SfmlView*, const virtual_<si::Event>&);
 
+MULTI_METHOD(_draw, void, si::view::SfmlView*, const virtual_<si::model::Entity>&);
+
 
 class SfmlView: public View {
 public:
@@ -64,20 +66,28 @@ public:
 	template <typename T>
 	friend class _handle_event_specialization;
 	
+	template <typename T>
+	friend class _draw_specialization;
+	
 	friend class vc::SfmlVc;
 	
 private:
 	void redraw();
 	
+	void simple_draw(sf::Texture& tex, const model::Entity& e);
+	
 	util::CCQueue<Event*> queue;
 	
-	model::State state = model::State::WAIT;
+	model::State state = model::WAIT;
 	void loop();
+	
+	void text_mode(); // Recap, GameOver, Wait
+	void game_mode(); // Playing
 	
 	Game* game;
 	
 	// keeps track of all the objects on screen, and their respective entities
-	std::map<si::model::Entity*, sf::Sprite> sprites;
+	//std::map<si::model::Entity*, sf::Sprite> sprites;
 	sf::Sprite backgroundsprite;
 	
 	// OpenGL can't handle reusing the same textures in multiple threads

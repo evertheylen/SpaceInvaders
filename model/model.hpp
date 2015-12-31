@@ -80,6 +80,8 @@ private:
 using yorel::multi_methods::virtual_;
 MULTI_METHOD(_handle_event, void, si::model::Model*, const virtual_<si::Event>&);
 
+MULTI_METHOD(_collide, void, si::model::Model*, virtual_<Entity>&, virtual_<Entity>&);
+
 
 // The model.
 class Model {
@@ -108,11 +110,15 @@ public:
 	template <typename T>
 	friend class _handle_event_specialization;
 	
+	template <typename T>
+	friend class _collide_specialization;
+	
 	// Important data about the game
 	// May be accessed by anyone
 	std::set<unsigned int> leftover_players;
 	
 	State get_state() const { return state; }
+	bool game_won() const { return victory; }
 	
 private:
 	void handle_event(Event* e);
@@ -120,13 +126,16 @@ private:
 	void load_level(Level& l);
 	void unload_level();
 	
+	void check_collisions(Entity* e);
+	bool check_collision(Entity* a, Entity* b);
+	
 	// Actual gameplay stuff
 	unsigned int max_players;
 	std::vector<Level> levels;
 	int current_level = -1;
 	std::set<Entity*> entities;
-	std::set<Entity*> saved_entities;
-	std::map<unsigned int, std::unique_ptr<Player>> players;
+	std::set<Entity*> saved_entities;  // entities saved here
+	std::map<unsigned int, Player*> players;  // and here 
 	bool victory = false;
 	
 	void playing();

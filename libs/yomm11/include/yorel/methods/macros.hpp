@@ -52,10 +52,11 @@
 
 
 // only use this with types for A and B, not names and their types
-#define SYMMETRIC_SPEC(ID, RESULT, A, B) \
-  BEGIN_SPECIALIZATION(ID, RESULT, B bbb, A aaa) {\
-    return GET_SPECIALIZATION(ID, RESULT, A, B)(aaa, bbb);\
-  } END_SPECIALIZATION;\
+#define SYMMETRIC_SPEC(ID, RESULT, whatevaah, A, B) \
+  BEGIN_SPECIALIZATION(ID, RESULT, whatevaah www, B bbb, A aaa) {\
+    return GET_SPECIALIZATION(ID, RESULT, whatevaah, A, B)(www, aaa, bbb);\
+  } END_SPECIALIZATION\
+
 
 
 #define END_SPECIALIZATION } };
