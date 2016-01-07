@@ -86,7 +86,7 @@ BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const Recap& e) {
 
 BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const LevelStart& e) {
 	std::cout << "SfmlView starts playing\n";
-	v->handle->window->setSize(sf::Vector2u(e.level->width, e.level->height));
+	//v->handle->window->setSize(sf::Vector2u(e.level->width, e.level->height));
 	v->state = model::PLAYING;
 } END_SPECIALIZATION;
 

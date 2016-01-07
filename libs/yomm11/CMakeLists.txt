@@ -12,7 +12,7 @@ cmake_minimum_required (VERSION 2.6)
 
 project (YOMM11)
 
-set (YOMM11_ERSION_MAJOR 1)
+set (YOMM11_VERSION_MAJOR 1)
 set (YOMM11_VERSION_MINOR 0)
 
 include_directories ("${YOMM11_SOURCE_DIR}/include")
@@ -31,18 +31,26 @@ if(MSVC)
 endif()
 
 add_subdirectory (src)
-add_subdirectory (tests)
-add_subdirectory (examples)
+#add_subdirectory (examples)
 
-enable_testing()
+set(YOMM11_TEST OFF)
 
-add_test (tests tests/tests)
-add_test (order12 tests/order12)
-add_test (order21 tests/order21)
-add_test (asteroids examples/asteroids)
-add_test (next examples/next)
-add_test (foreign examples/foreign)
-add_test (three examples/three)
-#add_test (NAME shared WORKING_DIRECTORY examples COMMAND dl_main)
+if (YOMM11_TEST)
+	add_subdirectory (tests)
+	enable_testing()
+
+	add_test (tests tests/tests)
+	add_test (order12 tests/order12)
+	add_test (order21 tests/order21)
+	add_test (asteroids examples/asteroids)
+	add_test (next examples/next)
+	add_test (foreign examples/foreign)
+	add_test (three examples/three)
+	#add_test (NAME shared WORKING_DIRECTORY examples COMMAND dl_main)
+endif()
 
 INSTALL (DIRECTORY include/yorel DESTINATION include)
+
+# configure_file(
+#   ${YOMM11_SOURCE_DIR}/yomm11-config.cmake.in
+#   ${YOMM11_BINARY_DIR}/yomm11-config.cmake @ONLY)

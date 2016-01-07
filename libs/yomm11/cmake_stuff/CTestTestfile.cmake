@@ -1,16 +1,16 @@
 # CMake generated Testfile for 
-# Source directory: /Bestanden/Copy/root/Bestanden/School/ADV_PROG/space_invaders/libs/yomm11
-# Build directory: /Bestanden/Copy/root/Bestanden/School/ADV_PROG/space_invaders/libs/yomm11/cmake_stuff
+# Source directory: /home/uauser/Downloads/SpaceInvaders-master/libs/yomm11
+# Build directory: /home/uauser/Downloads/SpaceInvaders-master/libs/yomm11/cmake_stuff
 # 
 # This file includes the relevant testing commands required for 
 # testing this directory and lists subdirectories to be tested as well.
-add_test(tests "tests/tests")
-add_test(order12 "tests/order12")
-add_test(order21 "tests/order21")
-add_test(asteroids "examples/asteroids")
-add_test(next "examples/next")
-add_test(foreign "examples/foreign")
-add_test(three "examples/three")
-subdirs(src)
-subdirs(tests)
-subdirs(examples)
+ADD_TEST(tests "tests/tests")
+ADD_TEST(order12 "tests/order12")
+ADD_TEST(order21 "tests/order21")
+ADD_TEST(asteroids "examples/asteroids")
+ADD_TEST(next "examples/next")
+ADD_TEST(foreign "examples/foreign")
+ADD_TEST(three "examples/three")
+SUBDIRS(src)
+SUBDIRS(tests)
+SUBDIRS(examples)
