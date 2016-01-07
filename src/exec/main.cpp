@@ -1,40 +1,6 @@
 
 // Main executable for Space Invaders
 
-/* [bake me]
-
-dependencies["build_exec"] = [
-	"game>>build_objects",
-	"view/sfml>>build_objects",
-	"viewcontroller>>build_objects",
-	"util/cmd>>build_objects",
-	"libs/yomm11>cmake>all",
-	# not mentioning sfml, CMake takes too long to actually realize it doesn't have to do anything
-]
-
-# SFML instructions:
-# in libs/sfml/cmake_stuff/, execute:
-#   cmake .. -DBUILD_SHARED_LIBS=OFF
-
-gcc_config_thuis = {
-	"post_extra": "-Wall -Wno-unused-value -Wl,-Bstatic -I libs/yomm11/include -I libs/sfml/include/ "
-				+ "-Llibs/yomm11/cmake_stuff/src/ -lyomm11 "
-				+ "-Llibs/sfml/cmake_stuff/lib/ -lsfml-graphics-s-d -lsfml-window-s-d -lsfml-system-s-d "
-				+ "-Wl,-Bdynamic -lX11 -lX11-xcb -lxcb -lxcb-glx -lxcb-randr -lxcb-icccm -lxcb-image -ludev -lpthread "
-				+ "-lGL -lGLEW -lfreetype -ljpeg -lsndfile -lopenal "
-}
-
-gcc_config = {
-	"post_extra": "-Wall -Wno-unused-value -Wl,-Bstatic -I libs/yomm11/include "
-				+ "-Llibs/yomm11/cmake_stuff/src/ -lyomm11 "
-				+ "-Wl,-Bdynamic -l:/usr/lib/x86_64-linux-gnu/libsfml-window.so.2.1 -lsfml-graphics -lsfml-system "
-				+ "-lX11 -lpthread "
-}
-
-executable = "spaceinvaders"
-
-[stop baking] */
-
 #include <iostream>
 #include <vector>
 #include <fstream>

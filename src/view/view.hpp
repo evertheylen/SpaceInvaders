@@ -1,12 +1,4 @@
 
-/* [bake me]
-
-dependencies["headers"] = [
-	"event>>headers"
-]
-
-[stop baking] */
-
 #pragma once
 
 #include <thread>

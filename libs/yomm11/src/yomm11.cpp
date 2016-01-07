@@ -12,6 +12,8 @@
 #include <functional>
 #include <cassert>
 
+#pragma GCC diagnostic ignored "-Wreorder"
+
 using namespace std;
 
 namespace yorel {
@@ -603,3 +605,5 @@ ostream& operator <<(ostream& os, const bitvec& v) {
 
 }
 }
+
+#pragma GCC diagnostic pop

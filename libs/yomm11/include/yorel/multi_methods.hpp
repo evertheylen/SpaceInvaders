@@ -5,6 +5,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-value"
+#pragma GCC diagnostic ignored "-Wreorder"
 
 #include <yorel/methods.hpp>
 

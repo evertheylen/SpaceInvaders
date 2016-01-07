@@ -1,18 +1,5 @@
 
-/* [bake me]
-
-dependencies["headers"] = [
-	"viewcontroller/sfml>>headers",
-	"view>>headers",
-	"event>>headers",
-	"model/entity>>headers",
-]
-
-dependencies["build_objects"] = [
-	"game>>headers"
-]
-
-[stop baking] */
+#pragma once
 
 #include <map>
 #include <memory>
@@ -32,7 +19,6 @@ dependencies["build_objects"] = [
 
 #include "sfmlresources.hpp"
 
-#pragma once
 
 namespace si {
 class Game;

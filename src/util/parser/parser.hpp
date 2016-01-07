@@ -1,12 +1,4 @@
 
-/* [bake me]
-
-dependencies["headers"] = [
-	"exceptions>>headers"
-]
-
-[stop baking] */
-
 #pragma once
 
 #include <string>

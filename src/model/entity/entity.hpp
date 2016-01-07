@@ -1,19 +1,13 @@
 
-/* [bake me]
-
-dependencies["headers"] = [
-	"util>>headers",
-	"util/stopwatch>>headers",
-]
-
-[stop baking] */
-
 #pragma once
 
 #include "yorel/multi_methods.hpp"
 
 #include "util/util.hpp"
 #include "movement.hpp"
+
+// YOMM11 gives these warnings
+#pragma GCC diagnostic ignored "-Wunused-value"
 
 
 namespace si {
@@ -128,3 +122,4 @@ public:
 }
 }
 
+#pragma GCC diagnostic pop

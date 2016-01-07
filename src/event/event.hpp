@@ -1,12 +1,4 @@
 
-/* [bake me]
-
-dependencies["headers"] = [
-	"util>>headers"
-]
-
-[stop baking] */
-
 #pragma once
 
 // only used in SFML specific events:
@@ -18,6 +10,9 @@ dependencies["headers"] = [
 #include "util/flag/flag.hpp"
 #include "model/model_state.hpp"
 #include "model/entity/entity.hpp"
+
+// YOMM11 gives these warnings
+#pragma GCC diagnostic ignored "-Wunused-value"
 
 namespace si {
 
@@ -366,10 +361,6 @@ public:
 };
 
 
-
-
-
-
 // don't like macro's?
 #undef SIMPLE_EVENT
 #undef PLAYER_EVENT
@@ -382,3 +373,5 @@ public:
 // An example is: TODO
 
 }
+
+#pragma GCC diagnostic pop

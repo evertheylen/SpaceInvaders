@@ -1,16 +1,5 @@
 
-/* [bake me]
-
-dependencies["headers"] = [
-	"viewcontroller/sfml>>headers",
-	"controller>>headers",
-	"model/entity>>headers",
-	"event>>headers",
-	"util/ccq>>headers",
-	"util/sleepable>>headers",
-]
-
-[stop baking] */
+#pragma once
 
 #include <thread>
 #include <vector>
@@ -29,7 +18,6 @@ dependencies["headers"] = [
 #include "util/sleepable/sleepable.hpp"
 #include "model/model_state.hpp"
 
-#pragma once
 
 namespace si {
 class Game;

@@ -1,22 +1,4 @@
 
-/* [bake me]
-
-dependencies["headers"] = [
-	"libs/tinyxml>>headers",
-	"event>>headers",
-	"model/entity>>headers",
-	"util/stopwatch>>headers",
-	"util/parser>>headers",
-	"util/periodical>>headers",
-]
-
-dependencies["build_objects"] = [
-	"game>>headers",
-	"util>>headers"
-]
-
-[stop baking] */
-
 #pragma once
 
 #include <vector>

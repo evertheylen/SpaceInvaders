@@ -1,17 +1,4 @@
 
-/* [bake me]
-
-dependencies["headers"] = [
-	"event>>headers",
-	"libs/tinyxml>>headers",
-	"view>>headers",
-	"model>>headers",
-	"util/ccq>>headers",
-	"util/rwlock>>headers",
-]
-
-[stop baking] */
-
 #pragma once
 
 #include <memory>

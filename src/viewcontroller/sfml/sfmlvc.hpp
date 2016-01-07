@@ -1,18 +1,4 @@
 
-/* [bake me]
-
-dependencies["headers"] = [
-	"viewcontroller>>headers",
-]
-
-dependencies["build_objects"] = [
-	"controller/sfml>>build_objects",
-	"view/sfml>>build_objects",
-	"viewcontroller>>build_objects",
-]
-
-[stop baking] */
-
 #pragma once
 
 #include <cassert>

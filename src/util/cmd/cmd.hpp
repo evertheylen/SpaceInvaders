@@ -1,22 +1,4 @@
 
-/* [bake me]
-
-dependencies["headers"] = [
-	"view>>headers",
-	"controller>>headers",
-	"viewcontroller>>headers",
-	"util>>headers",
-	"exceptions>>headers",
-]
-
-dependencies["build_objects"] = [
-	"view/sfml>>build_objects",
-	"controller/sfml>>build_objects",
-	"viewcontroller/sfml>>build_objects"
-]
-
-[stop baking] */
-
 #include <iostream>
 #include <string>
 #include <vector>
