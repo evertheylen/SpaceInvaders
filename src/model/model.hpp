@@ -16,6 +16,7 @@
 #include "util/stopwatch/stopwatch.hpp"
 #include "util/parser/parser.hpp"
 #include "util/periodical/periodical.hpp"
+#include "util/random/random.hpp"
 
 #include "model_state.hpp"
 
@@ -39,6 +40,7 @@ public:
 	unsigned int height;
 	unsigned int alien_rows;
 	unsigned int alien_cols;
+	double alien_speed;
 };
 
 
@@ -118,13 +120,21 @@ private:
 	void check_collisions(Entity* e);
 	bool check_collision(Entity* a, Entity* b);
 	
+	void move_alien(int& row, int& col);
+	bool next_alien(int& row, int& col);
+	
 	// === Actual gameplay data ===
 	unsigned int max_players;
 	std::vector<Level> levels;
 	int current_level = -1;
 	Entity world; // spans the entire world
 	
-	util::Periodical alien_periodical; // when to move (not using movement vector, move in steps)
+	util::Periodical alien_periodical; // when to move an alien (not using movement vector, move in steps)
+	enum alien_mov_state_type { LEFT, RIGHT, DOWNLEFT, DOWNRIGHT };
+	alien_mov_state_type alien_mov_state = RIGHT;
+	unsigned int moving_alien_x = 0;
+	unsigned int moving_alien_y = 0;
+	int aliens_alive;
 	std::vector<std::vector<Alien*>> alien_grid; // alien_grid[col][row]  (like (x,y) coords, may contain nullptrs)
 	Alien* topleftmost = nullptr;
 	Alien* toprightmost = nullptr;

@@ -15,6 +15,14 @@ Level::Level(const picojson::object& conf) {
 	height = get<unsigned int>(conf, "height");
 	alien_rows = get<unsigned int>(conf, "alien_rows");
 	alien_cols = get<unsigned int>(conf, "alien_cols");
+	alien_speed = get<double>(conf, "alien_speed");
+	// make sure there is enough space
+	if ((alien_cols+1)*(Alien::gap_x) - Alien::width >= width) {
+		throw ParseError("not enough room (in x direction)\n");
+	}
+	if (Player::height_from_earth + (alien_rows+1)*(Alien::gap_y) - Alien::height >= height) {
+		throw ParseError("not enough room (in y direction)\n");
+	}
 }
 
 
@@ -58,6 +66,8 @@ Model::Model(const picojson::value& conf, Game* g): game(g) {
 	for (unsigned int i=0; i<max_players; i++) {
 		leftover_players.insert(i);
 	}
+	
+	alien_periodical = util::Periodical({12}); // TODO
 }
 
 std::vector<std::thread*> Model::start() {
@@ -95,6 +105,9 @@ void Model::playing() {
 	util::Stopwatch::TimePoint current_tick = watch.now();
 	util::Stopwatch::TimePoint prev_tick;
 	
+	int move_alien_row = 0;
+	int move_alien_col = 0;
+	
 	while (state == PLAYING) {
 		// tick
 		prev_tick = current_tick;
@@ -118,19 +131,47 @@ void Model::playing() {
 		game->entity_lock.write_lock();
 		
 		// --- Actual calculations of next 'frame' ---
+		// movemements
 		for (Entity* e: entities) {
 			if (e->mov.dir.length() > 0) {
 				e->mov.perform(duration, e->pos);
 				check_collisions(e);
-				if (not check_collision(e, &world)) {
-					e->killme = true; // out of world
-				}
+			}
+			if (not check_collision(e, &world)) {
+				e->killme = true; // out of world
 			}
 		}
 		
 		// handle Events, until nullptr
 		while (Event* e = game->get_input_event()) {
 			handle_event(e);
+		}
+		
+		// move an Alien, let them shoot
+		if (alien_periodical.advance(duration)) {
+			move_alien(move_alien_row, move_alien_col);
+			if (not next_alien(move_alien_row, move_alien_col)) {
+				// start again from above
+				move_alien_row = 0;
+				move_alien_col = 0;
+				if (alien_grid[move_alien_col][move_alien_row] == nullptr) {
+					next_alien(move_alien_row, move_alien_col);
+				}
+				if (alien_mov_state == DOWNLEFT) {
+					alien_mov_state = LEFT;
+				}
+				if (alien_mov_state == DOWNRIGHT) {
+					alien_mov_state = RIGHT;
+				}
+			}
+			for (Alien* a: bottom_aliens) {
+				if (a != nullptr and util::RandomGenerator::instance()->flip(0.025/aliens_alive)) { // TODO
+					std::cout << "Model: Pew\n";
+					Bomb* b = new Bomb(a);
+					saved_entities.insert(b);
+					entities.insert(b);
+				}
+			}
 		}
 		
 		// delete entities
@@ -215,6 +256,71 @@ Level* Model::get_current_level() {
 	}
 }
 
+void Model::move_alien(int& row, int& col) {
+	if (topleftmost == nullptr && toprightmost == nullptr) return;
+	
+	// first, select an alien
+	Alien* a = alien_grid[col][row];
+	if (a == nullptr) return;
+	
+	// set up movement
+	util::Vector2D_d mov(8, 0);
+	if (alien_mov_state == LEFT) mov *= -1;
+	
+	// calculations for out of world
+	double left = a->pos.x - ((col - topleftmost->col) * Alien::gap_x);
+	std::cout << "Model: left is " << left << "\n";
+	double right = (toprightmost->col - col) * Alien::gap_x + Alien::width + a->pos.x;
+	std::cout << "Model: right is " << right << "\n";
+	
+	// check if we'd be out of the world
+	if (alien_mov_state == LEFT) {
+		if (left + mov.x <= 10.0) {
+			alien_mov_state = DOWNRIGHT;
+		}
+	} else {
+		if (right + mov.x >= world.size.x - 10.0) {
+			alien_mov_state = DOWNLEFT;
+		}
+	}
+	
+	// check if we're going down
+	if (alien_mov_state == DOWNLEFT or alien_mov_state == DOWNRIGHT) {
+		mov = util::Vector2D_d(0, 8);
+	}
+	
+	// perform the move
+	a->pos += mov;
+	check_collisions(a);
+}
+
+
+bool next(int& row, int& col, int max_rows, int max_cols) {
+	// assuming current position is legit
+	col++;
+	if (col >= max_cols) {
+		col = 0;
+		row++;
+	}
+	if (row >= max_rows) {
+		return false;
+	}
+	return true;
+}
+
+
+bool Model::next_alien(int& row, int& col) {
+	int max_cols = levels[current_level].alien_cols;
+	int max_rows = levels[current_level].alien_rows;
+	
+	while (next(row, col, max_rows, max_cols)) {
+		if (alien_grid[col][row] != nullptr) {
+			return true;
+		}
+	}
+	return false;
+}
+
 
 void Model::load_level(Level& l) {
 	unload_level();
@@ -232,24 +338,22 @@ void Model::load_level(Level& l) {
 	bottom_aliens.assign(l.alien_cols, nullptr);
 	alien_grid.assign(l.alien_cols, {});
 	for (auto& row: alien_grid) row.assign(l.alien_rows, nullptr);
-	
-	double x = 50;
-	double add_to_x = 75;
-	double add_to_y = 60;
+	double x = Alien::gap_x - Alien::width;
 	for (int col=0; col<l.alien_cols; col++) {
-		double y = 100;
+		double y = Alien::gap_y - Alien::height;
 		for (int row=0; row<l.alien_rows; row++) {
 			Alien* a = new Alien(x, y, col, row);
 			alien_grid[col][row] = a;
 			saved_entities.insert(a);
 			entities.insert(a);
-			y += add_to_y;
+			y += Alien::gap_y;
 		}
 		bottom_aliens.at(col) = alien_grid[col][l.alien_rows-1];
-		x += add_to_x;
+		x += Alien::gap_x;
 	}
 	topleftmost = alien_grid[0][0];
 	toprightmost = alien_grid[l.alien_cols-1][0];
+	aliens_alive = l.alien_cols * l.alien_rows;
 	
 	for (auto& e: saved_entities) {
 		entities.insert(e);

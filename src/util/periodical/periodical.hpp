@@ -15,16 +15,17 @@ public:
 	Periodical(const std::vector<double>& _phases):
 			phases(_phases) {}
 	
-	Periodical() = default;
+	Periodical(): phases({1}) {}
 	
 	template <typename T>
-	int advance(const T& extra_dur) {
+	bool advance(const T& extra_dur) {
 		dur += extra_dur;
 		if (dur >= DurationT(phases.at(current_phase) * modifier)) {
 			current_phase = (current_phase+1) % phases.size();
 			dur *= 0;
+			return true;
 		}
-		return current_phase;
+		return false;
 	}
 	
 	int get_current_phase() {

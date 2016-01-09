@@ -61,15 +61,21 @@ public:
 
 class Bullet;
 
+// ATTENTION: Gaps should include the width and height
+
 class Player: public Actor {
 public:
 	MM_CLASS(Player, Actor);
 	
+	constexpr static int width = 52;
+	constexpr static int height = 32;
+	constexpr static int height_from_earth = 50;
+	
 	Player(double _x, double _y): Actor(_x, _y) {
 		MM_INIT();
 		mov.speed = 0.2;
-		size.x = 52;
-		size.y = 32;
+		size.x = width;
+		size.y = height;
 	}
 	
 	Bullet* b = nullptr;
@@ -80,12 +86,17 @@ class Alien: public Actor {
 public:
 	MM_CLASS(Alien, Actor);
 	
+	constexpr static int width = 52;
+	constexpr static int height = 32;
+	constexpr static double gap_x = 75;
+	constexpr static double gap_y = 60;
+	
 	Alien(double _x, double _y, unsigned int _col, unsigned int _row): 
 			Actor(_x, _y), col(_col), row(_row) {
 		MM_INIT();
 		
-		size.x = 48;
-		size.y = 32;
+		size.x = width;
+		size.y = height;
 	}
 	
 	unsigned int col;
@@ -103,7 +114,7 @@ public:
 		size.y = 14;
 		pos.x = p->pos.x + ((p->size.x - size.x)/2);
 		pos.y = p->pos.y - size.y;
-		mov = Movement(0.4, util::Vector2D_d(0, -1));
+		mov = Movement(1.2, util::Vector2D_d(0, -1));
 	}
 	
 	Player* p;
@@ -113,9 +124,13 @@ class Bomb: public Projectile {
 public:
 	MM_CLASS(Bomb, Projectile);
 	
-	Bomb(double _x, double _y): Projectile(_x, _y) {
+	Bomb(Alien* a) {
 		MM_INIT();
-		mov = Movement(0.1, util::Vector2D_d(0, 1)); // TODO magic constant
+		size.x = 12;
+		size.y = 28;
+		pos.x = a->pos.x + ((a->size.x - size.x)/2);
+		pos.y = a->pos.y + a->size.y;
+		mov = Movement(0.3, util::Vector2D_d(0, 1));
 	}
 };
 

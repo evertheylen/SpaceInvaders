@@ -5,15 +5,16 @@
 			"name": "level 1",
 			"alien_rows": 4,
 			"alien_cols": 10,
+			"alien_speed": 2,
 			"width": 800,
 			"height": 600,
 		},
 		{
 			"name": "level 2",
-			"alien_rows": 4,
-			"alien_cols": 10,
-			"width": 800,
-			"height": 600,
+			"alien_rows": 2,
+			"alien_cols": 5,
+			"width": 1000,
+			"height": 800,
 		},
 	]
 }

@@ -86,7 +86,12 @@ BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const Recap& e) {
 
 BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const LevelStart& e) {
 	std::cout << "SfmlView starts playing\n";
-	//v->handle->window->setSize(sf::Vector2u(e.level->width, e.level->height));
+	v->handle->window->setSize(sf::Vector2u(e.level->width, e.level->height));
+	sf::View vw = v->handle->window->getView();
+	v->backgroundsprite.setScale(double(e.level->width) / vw.getSize().x, double(e.level->height) / vw.getSize().y);
+	vw.reset(sf::FloatRect(0,0,e.level->width, e.level->height));
+	v->backgroundsprite.setTextureRect(sf::IntRect(0, 0, e.level->width, e.level->height));
+	v->handle->window->setView(vw);
 	v->state = model::PLAYING;
 } END_SPECIALIZATION;
 
@@ -113,6 +118,10 @@ BEGIN_SPECIALIZATION(_draw, void, SfmlView* v, const Bullet& e) {
 	v->simple_draw(v->res.bullet, e);
 } END_SPECIALIZATION;
 
+
+BEGIN_SPECIALIZATION(_draw, void, SfmlView* v, const Bomb& e) {
+	v->simple_draw(v->res.big_bomb, e);
+} END_SPECIALIZATION;
 
 
 }

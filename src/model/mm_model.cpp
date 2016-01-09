@@ -34,7 +34,7 @@ BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const CreatePlayer& e) {
 	m->handle_event(new Ready); // first Ready up (always synchronously)
 	if (Level* l = m->get_current_level()) {
 		p->pos.x = (l->width*0.125) + (((double(l->width)*0.75) / double(m->max_players-1))*e.ID) - (p->size.x/2);
-		p->pos.y = l->height - 50;
+		p->pos.y = l->height - Player::height_from_earth;
 		m->entities.insert(p);
 	} else {
 		std::cout << "Model: trying to create player without a level\n";
@@ -134,7 +134,26 @@ BEGIN_SPECIALIZATION(_collide, void, Model* m, Alien& a, Bullet& b) {
 // switched
 BEGIN_SPECIALIZATION(_collide, void, Model* m, Bullet& b, Alien& a) {
 	GET_SPECIALIZATION(_collide, void, Model*, Alien&, Bullet&)(m, a, b);
-} END_SPECIALIZATION
+} END_SPECIALIZATION;
+
+
+BEGIN_SPECIALIZATION(_collide, void, Model* m, Bomb& b, Player& p) {
+	b.killme = true;
+	//p.killme = true; // TODO :P
+} END_SPECIALIZATION;
+
+BEGIN_SPECIALIZATION(_collide, void, Model* m, Player& p, Bomb& b) {
+	GET_SPECIALIZATION(_collide, void, Model*, Bomb& b, Player& p)(m, b, p);
+} END_SPECIALIZATION;
+
+BEGIN_SPECIALIZATION(_collide, void, Model* m, Projectile& a, Projectile& b) {
+	a.killme = true;
+	b.killme = true;
+} END_SPECIALIZATION;
+
+BEGIN_SPECIALIZATION(_collide, void, Model* m, Bomb& a, Bomb& b) {
+	// do nothing
+} END_SPECIALIZATION;
 
 
 // === Killing ====================================================================================
@@ -195,6 +214,7 @@ BEGIN_SPECIALIZATION(_kill, bool, Model* m, Alien& e) {
 	}
 	done_toprightmost:
 	
+	m->aliens_alive--;
 	return true;
 } END_SPECIALIZATION;
 

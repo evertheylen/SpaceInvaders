@@ -3,6 +3,7 @@ project(SpaceInvaders)
 set(CMAKE_CXX_FLAGS "-Wall")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_BUILD_TYPE Debug)
 
 # Extend the CMake module path to find the FindSFML.cmake
 # file in {project root}/cmake/Modules

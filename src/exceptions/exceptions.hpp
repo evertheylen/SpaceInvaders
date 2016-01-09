@@ -8,30 +8,25 @@ namespace si {
 
 class SiException: public std::exception {
 public:
-	SiException(const std::string& _info):
-		info(_info) {}
+	SiException(std::string _info): info("SiException, info: ") {
+		info += _info;
+	}
 	
 	virtual const char* what() const throw() {
-		return (std::string("SiException, info: ") + info).c_str();
+		return info.c_str();
 	}
 	
 protected:
 	std::string info;
 };
 
-// yay macro's
-// making code shorter since (some time now) (insert year when C's preprocessor was first created)
-#define ADD_EXCEPTION(type, msg) \
-	class type: public SiException {\
-	public:\
-		type(const std::string& _info): SiException(_info) {}\
-		\
-		virtual const char* what() const throw() {\
-			return (std::string("") + msg).c_str();\
-		}\
-}
 
-ADD_EXCEPTION(ParseError, "Error while parsing: " + info);
+
+class ParseError: public SiException {
+public:
+	ParseError(std::string _info):
+		SiException(std::string("Error while parsing: ") + _info) {}
+};
 
 template <typename T>
 void true_or_throw(bool cond, std::string msg = "") {
@@ -52,8 +47,5 @@ public:
 private:
 	std::string arg;
 };
-
-// You don't like macro's? Fine.
-#undef ADD_EXCEPTION
 
 }

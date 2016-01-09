@@ -18,6 +18,7 @@ public:
 		assert(big_alien.loadFromFile("data/textures/big.png"));
 		
 		assert(bullet.loadFromFile("data/textures/bullet.png"));
+		assert(big_bomb.loadFromFile("data/textures/bomb.png"));
 		
 		assert(font.loadFromFile("data/fonts/roboto.ttf"));
 		

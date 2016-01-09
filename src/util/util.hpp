@@ -11,7 +11,6 @@
 
 // 'additions' to STL
 
-
 template <typename T>
 std::vector<T> operator+(const std::vector<T>& a, const std::vector<T>& b) {
 	std::vector<T> total(a);
