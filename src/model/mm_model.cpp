@@ -215,6 +215,8 @@ BEGIN_SPECIALIZATION(_kill, bool, Model* m, Alien& e) {
 	done_toprightmost:
 	
 	m->aliens_alive--;
+	if (m->aliens_alive == 0) m->win_level();
+	
 	return true;
 } END_SPECIALIZATION;
 

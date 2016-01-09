@@ -53,7 +53,9 @@ Model::Model(const picojson::value& conf, Game* g): game(g) {
 		picojson::object m = conf.get<picojson::object>();
 		max_players = get<unsigned int>(m, "max_players");
 		if (m.find("levels")->second.is<picojson::array>()) {
+			std::cout << conf.to_str() << "\n";
 			for (const auto& l: m.find("levels")->second.get<picojson::array>()) {
+				std::cout << "Model: reading a level\n";
 				levels.push_back(Level(convert<picojson::object>(l)));
 			}
 		} else {
@@ -218,7 +220,10 @@ void Model::wait() {
 }
 
 void Model::recap() {
-	
+	while (state == RECAP) while (Event* e = game->get_input_event()) {
+		std::cerr << " [ V   M<--C ] Model pulling Event from Controllers: " << e->name() << "\n";
+		handle_event(e);
+	}
 }
 
 // note: assumes a is the smaller object
@@ -269,9 +274,7 @@ void Model::move_alien(int& row, int& col) {
 	
 	// calculations for out of world
 	double left = a->pos.x - ((col - topleftmost->col) * Alien::gap_x);
-	std::cout << "Model: left is " << left << "\n";
 	double right = (toprightmost->col - col) * Alien::gap_x + Alien::width + a->pos.x;
-	std::cout << "Model: right is " << right << "\n";
 	
 	// check if we'd be out of the world
 	if (alien_mov_state == LEFT) {
@@ -286,7 +289,7 @@ void Model::move_alien(int& row, int& col) {
 	
 	// check if we're going down
 	if (alien_mov_state == DOWNLEFT or alien_mov_state == DOWNRIGHT) {
-		mov = util::Vector2D_d(0, 8);
+		mov = util::Vector2D_d(0, 12);
 	}
 	
 	// perform the move
@@ -319,6 +322,16 @@ bool Model::next_alien(int& row, int& col) {
 		}
 	}
 	return false;
+}
+
+void Model::win_level() {
+	state = RECAP;
+	game->notify_all(new Recap);
+}
+
+void Model::lose_level() {
+	state = RECAP;
+	game->notify_all(new Recap);
 }
 
 

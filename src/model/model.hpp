@@ -123,6 +123,9 @@ private:
 	void move_alien(int& row, int& col);
 	bool next_alien(int& row, int& col);
 	
+	void win_level();
+	void lose_level();
+	
 	// === Actual gameplay data ===
 	unsigned int max_players;
 	std::vector<Level> levels;

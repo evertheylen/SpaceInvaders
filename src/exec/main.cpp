@@ -53,7 +53,11 @@ int main(int argc, char** argv) {
 			return 1;
 		}
 		picojson::value v;
-		picojson::parse(v, file);
+		std::string error = picojson::parse(v, file);
+		if (error != "") {
+			std::cout << "Error while parsing: " << error << "\n";
+			return 1;
+		}
 		
 		arguments.erase(arguments.begin());
 		
