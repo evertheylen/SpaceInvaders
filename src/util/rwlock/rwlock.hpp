@@ -7,9 +7,7 @@
 #include <atomic>
 #include <chrono>
 
-// own clock because rwlock should not depend on stopwatch
-using ClockT = std::chrono::high_resolution_clock;
-using TimepointT = std::chrono::time_point<ClockT>;
+
 
 // Did you know C++ has the thread_local keyword?
 // Neither did I. "tsd" stands for Thread Specific Data.
@@ -17,8 +15,15 @@ using TimepointT = std::chrono::time_point<ClockT>;
 // (now replaced with timestamps)
 //extern thread_local TimepointT tsd_last_update;
 
+namespace si {
+namespace util {
+
 class RWLock {
 public:
+	// own clock because rwlock should not depend on stopwatch
+	using ClockT = std::chrono::high_resolution_clock;
+	using TimepointT = std::chrono::time_point<ClockT>;
+	
 	RWLock();
 	
 	TimepointT new_timestamp();
@@ -58,3 +63,5 @@ w |----|        |---||----|         |----|
 
 */
 
+}
+}

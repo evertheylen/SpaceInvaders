@@ -5,17 +5,16 @@
 #include <vector>
 
 #include "event/event.hpp"
+#include "event/observer/observer.hpp"
 
 namespace si {
 namespace view {
 
-class View {
+class View: public Observer {
 public:
 	virtual std::vector<std::thread*> start() = 0;
 	
-	virtual void handle_event(Event* e) = 0;
-	
-	virtual bool is_concurrent() = 0;
+	virtual bool is_concurrent() const = 0;
 	
 	virtual void wait_until_done() = 0;
 	

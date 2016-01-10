@@ -46,17 +46,13 @@ public:
 	// get (const!) info about the model if needed
 	const model::Model& get_model() const;
 	
-	// so the controller can get a player (ID)
-	// result < 0 ==> there is no player available
-	int get_player();
-	
 	
 	// --- avoiding race conditions ---
 	void model_lock();
 	void model_unlock();
 	
 	// RWLock for the entities (TODO private?)
-	RWLock entity_lock;
+	util::RWLock entity_lock;
 	
 	
 	// sadly, a 'hack' around pthread's bugs

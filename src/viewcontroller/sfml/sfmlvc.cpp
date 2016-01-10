@@ -39,7 +39,7 @@ void SfmlVc::loop(util::Flag& f) {
 		}
 	} else {
 		// you could call this a mini-controller because sfml needs one
-		view->state = si::model::WAIT;
+		view->phase = si::model::WAIT;
 		sf::Event e;
 		while (window->isOpen() and window->waitEvent(e)) {
 			if (e.type == sf::Event::Closed) {

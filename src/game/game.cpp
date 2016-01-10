@@ -7,6 +7,7 @@
 #include <memory>
 #include <utility>
 
+
 using namespace si;
 
 Game::Game(const picojson::value& conf) {
@@ -42,6 +43,7 @@ void Game::notify_views(Event* e) {
 
 void Game::notify_views(Tick* e) {
 	for (view::View* v: synchr_views) {
+		std::cerr << " [ V<--M   C ] Passing Tick to some View\n";
 		v->handle_event(e->clone());
 	}
 	delete e;
@@ -81,17 +83,6 @@ void Game::unregister_controller(controller::Controller* c) {
 
 const model::Model& Game::get_model() const {
 	return the_model;
-}
-
-int Game::get_player() {
-	model_lock();
-	for (unsigned int i: the_model.leftover_players) {
-		the_model.leftover_players.erase(i);
-		model_unlock();
-		return i;
-	}
-	model_unlock();
-	return -1;
 }
 
 

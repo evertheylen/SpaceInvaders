@@ -105,17 +105,15 @@ public:
 	
 	// Important data about the game
 	// May be accessed by anyone
-	std::set<unsigned int> leftover_players;
-	
-	State get_state() const { return state; }
-	bool game_won() const { return victory; }
-	Level* get_current_level();
+	const State& get_state() const { return state; }
+	Player* get_player(int ID) const;
 	
 private:
 	void handle_event(Event* e);
 	
 	void load_level(Level& l);
 	void unload_level();
+	void place_player(Level& l, int ID, Player* p);
 	
 	void check_collisions(Entity* e);
 	bool check_collision(Entity* a, Entity* b);
@@ -131,6 +129,8 @@ private:
 	std::vector<Level> levels;
 	int current_level = -1;
 	Entity world; // spans the entire world
+	std::set<int> leftover_players;
+	int players_alive;
 	
 	util::Periodical alien_periodical; // when to move an alien (not using movement vector, move in steps)
 	enum alien_mov_state_type { LEFT, RIGHT, DOWNLEFT, DOWNRIGHT };
@@ -147,14 +147,16 @@ private:
 	std::set<Entity*> entities;
 	std::set<Entity*> saved_entities;  // entities saved here
 	std::map<unsigned int, Player*> players;  // and here 
-	bool victory = false;
 	
 	// ======
 	
 	void playing();
 	void wait();
 	void recap();
-	State state = WAIT;
+	void gameover();
+	State state;
+	
+	bool victory;
 	
 	Game* game;
 	util::Stopwatch watch;

@@ -4,18 +4,18 @@
 		{
 			"name": "level 1",
 			"alien_rows": 7,
-			"alien_cols": 11,
-			"alien_speed": 4,
-			"width": 1000,
-			"height": 750
-		}, 
+			"alien_cols": 10,
+			"alien_speed": 2,
+			"width": 800,
+			"height": 600
+		},
 		{
 			"name": "level 2",
 			"alien_rows": 2,
-			"alien_cols": 5,
-			"alien_speed": 2,
-			"width": 1000,
-			"height": 800
+			"alien_cols": 3,
+			"alien_speed": 4,
+			"width": 300,
+			"height": 500
 		}
 	]
 }

@@ -27,17 +27,28 @@ BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const Event& e) {
 } END_SPECIALIZATION;
 
 
-BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const CreatePlayer& e) {
-	// TODO check state?
-	Player* p = new Player(0, 0);
-	m->players[e.ID] = p;
-	m->handle_event(new Ready); // first Ready up (always synchronously)
-	if (Level* l = m->get_current_level()) {
-		p->pos.x = (l->width*0.125) + (((double(l->width)*0.75) / double(m->max_players-1))*e.ID) - (p->size.x/2);
-		p->pos.y = l->height - Player::height_from_earth;
-		m->entities.insert(p);
+BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const AskPlayer& e) {
+	int pl = -1;
+	for (unsigned int i: m->leftover_players) {
+		m->leftover_players.erase(i);
+		pl = i;
+		break;
+	}
+	if (pl < 0) {
+		std::cout << "Model: no more players available\n";
+		// TODO send message back "sorry mate"
+		return;
 	} else {
-		std::cout << "Model: trying to create player without a level\n";
+		e.obv->handle_event(new CreatePlayer(pl));
+		m->players[pl] = new Player(0, 0);  // load_level will reset this to a proper position
+		if (m->current_level < m->levels.size()) {
+			m->place_player(m->levels[m->current_level], pl, m->players[pl]);
+		}
+	}
+		
+	if (m->state.phase() == WAIT) {
+		// someone expects us to plaaaay
+		m->handle_event(new Ready); // first Ready up (always synchronously)
 	}
 } END_SPECIALIZATION;
 
@@ -47,7 +58,7 @@ BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const ReleasePlayer& e) {
 		Player* p = m->players[e.ID];
 		m->players.erase(e.ID);
 		m->entities.erase(p);
-		m->leftover_players.insert(e.ID);
+		m->leftover_players.insert(e.ID); // TODO
 	} else {
 		std::cout << "Model: Unknown player " << e.ID << "\n";
 	}
@@ -64,7 +75,7 @@ BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const Fire& e) {
 			m->saved_entities.insert(b);
 			// notify views that a player has shot
 			m->game->notify_views(new PlayerShoots(p));
-			//p->b = b;
+			p->b = b;
 		} else {
 			std::cout << "Model: Player already has bullet\n";
 		} 
@@ -84,31 +95,26 @@ BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const SetDirection& e) {
 
 
 BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const VCStop& e) {
-	m->state = model::EXIT;
+	m->state.set(model::EXIT);
 	std::cout << "Did " << m->ticks << " ticks, taking an average of " << m->avg_tick << "\n";
 } END_SPECIALIZATION;
 
 
 BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const Ready& e) {
+	if (m->state.phase() == model::GAMEOVER) return;
 	// load next level
-	if (m->state != model::PLAYING) {
+	if (m->state.phase() != model::PLAYING) {
 		m->current_level++;
 		if (m->current_level < m->levels.size()) {
 			// level exists, go ahead
 			std::cout << "Model: Loading level " << m->current_level << "\n";
 			m->load_level(m->levels[m->current_level]);
-			m->game->notify_all(new LevelStart(&m->levels[m->current_level]));
-			m->state = model::PLAYING;
+			m->state.set(model::PLAYING);
 		} else {
-			std::cout << "Model: Game is already over, no need to ready a new level\n";
-			// level does not exist, seems some controller didn't get the message
-			// broadcast again: "the game is over, stop bitching around"
-			m->game->notify_views(new GameStop(m->victory));
+			m->state.set(model::GAMEOVER);
 		}
 	} else {
 		std::cout << "Model: Can't Ready when we're already playing\n";
-		// this does however tell us that there are views/controllers out there who are not aware of our state
-		m->game->notify_all(new LevelStart(m->get_current_level()));
 	}
 } END_SPECIALIZATION;
 
@@ -116,7 +122,6 @@ BEGIN_SPECIALIZATION(_handle_event, void, Model* m, const Ready& e) {
 
 // === Collisions =================================================================================
 
-// Don't forget to SYMMETRIC_SPEC(_collide, void, Model* m, Type2, Type1)
 
 BEGIN_SPECIALIZATION(_collide, void, Model* m, Entity& a, Entity& b) {
 	std::cout << "Model: Unhandled collision on " << a.pos << "\n";
@@ -129,6 +134,7 @@ BEGIN_SPECIALIZATION(_collide, void, Model* m, Alien& a, Bullet& b) {
 	std::cout << "Alien: " << a.pos << " --> " << a.pos + a.size << "\n";
 	a.killme = true;
 	b.killme = true;
+	b.p->score += 10;
 } END_SPECIALIZATION;
 
 // switched
@@ -136,10 +142,20 @@ BEGIN_SPECIALIZATION(_collide, void, Model* m, Bullet& b, Alien& a) {
 	GET_SPECIALIZATION(_collide, void, Model*, Alien&, Bullet&)(m, a, b);
 } END_SPECIALIZATION;
 
+BEGIN_SPECIALIZATION(_collide, void, Model* m, Alien& a, Earth& e) {
+	std::cout << "Model: Collision between Alien and Earth\n";
+	m->lose_level();
+} END_SPECIALIZATION;
+
+// switched
+BEGIN_SPECIALIZATION(_collide, void, Model* m, Earth& e, Alien& a) {
+	GET_SPECIALIZATION(_collide, void, Model*, Alien&, Earth&)(m, a, e);
+} END_SPECIALIZATION;
+
 
 BEGIN_SPECIALIZATION(_collide, void, Model* m, Bomb& b, Player& p) {
 	b.killme = true;
-	//p.killme = true; // TODO :P
+	p.killme = true;
 } END_SPECIALIZATION;
 
 BEGIN_SPECIALIZATION(_collide, void, Model* m, Player& p, Bomb& b) {
@@ -163,6 +179,22 @@ BEGIN_SPECIALIZATION(_kill, bool, Model* m, Entity& e) {
 	return true; // just kill
 } END_SPECIALIZATION;
 
+BEGIN_SPECIALIZATION(_kill, bool, Model* m, Bullet& b) {
+	b.p->b = nullptr;
+	return true;
+} END_SPECIALIZATION;
+
+BEGIN_SPECIALIZATION(_kill, bool, Model* m, Player& p) {
+	if (p.lives <= 1) {
+		p.lives = 0;
+		m->players_alive--;
+		if (m->players_alive <= 0) m->lose_level();
+		return true;
+	} else {
+		p.lives--;
+		return false;
+	}
+} END_SPECIALIZATION;
 
 BEGIN_SPECIALIZATION(_kill, bool, Model* m, Alien& e) {
 	m->alien_grid[e.col][e.row] = nullptr;

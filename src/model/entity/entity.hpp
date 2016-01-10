@@ -35,6 +35,19 @@ public:
 	bool killme = false;
 };
 
+
+class Earth: public Entity {
+public:
+	MM_CLASS(Earth, Entity);
+	
+	Earth() { MM_INIT(); }
+	
+	Earth(double _x, double _y): Entity(_x, _y) {
+		MM_INIT();
+	}
+};
+
+
 class Actor: public Entity {
 public:
 	MM_CLASS(Actor, Entity);
@@ -79,6 +92,8 @@ public:
 	}
 	
 	Bullet* b = nullptr;
+	int score = 0;
+	int lives = 3;
 };
 
 

@@ -27,13 +27,13 @@ std::vector<std::thread*> SfmlController::start() {
 }
 
 void SfmlController::handle_event(Event* e) {
-	std::cerr << " [ V   M  >C ] SfmlController received: " << e->name() << "\n";
+	std::cerr << " [ V   M  >C ] SfmlController (" << this << ") received: " << e->name() << " (phase: " << phase << ")\n";
 	if (concurrent) {
 		// let the other thread handle it
 		input_queue.push(e);
 		slp.wake_up();
 	} else {
-		if (state != model::EXIT) _handle_event(this, *e);;
+		if (phase != model::EXIT) _handle_event(this, *e);;
 	}
 }
 
@@ -43,6 +43,7 @@ Event* SfmlController::get_event() {
 	}
 	if (not concurrent) {
 		sf::Event se;
+		std::cout << "SfmlController: polling window\n";
 		if (handle->window->pollEvent(se)) {
 			// handle this event as if it was input
 			if (se.type == sf::Event::Closed) {
@@ -66,7 +67,7 @@ void SfmlController::loop() {
 // 			std::cout << "SfmlController: got some event (in loop)\n";
 			Event* e = input_queue.pop();
 			_handle_event(this, *e);
-			if (state == model::EXIT) return; // thereby closing this Controller
+			if (phase == model::EXIT) return; // thereby closing this Controller
 		}
 		slp.sleep();
 	}

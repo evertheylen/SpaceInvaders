@@ -11,30 +11,23 @@ namespace si {
 namespace controller {
 
 BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* m, const Event& e) {
-	std::cout << "SfmlView: Unhandled Event occured\n";
+	std::cout << "SfmlController: Unhandled Event occured\n";
 } END_SPECIALIZATION;
 
 
 // A rather big specialization, because it handles all sfml events
 BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const SfmlInput& e) {
 	sf::Event se = e.event;
-	switch (c->state) {
-		case model::State::WAIT: {
+	switch (c->phase) {
+		case model::PRE_WAIT: {
 			switch (se.type) {
 				// key pressed
 				case sf::Event::KeyPressed:
 					switch(se.key.code) {
 						case sf::Keyboard::Space:
-							std::cout << "SfmlController (" << c << "): Getting player\n";
-							c->my_player = c->game->get_player();
-							if (c->my_player < 0) {
-								c->handle->view->handle_event(new DisplayText("Sorry, there are no more spots available", DisplayState::ERROR));
-								std::cout << "SfmlController (" << c << "): No more players available\n";
-							} else {
-								std::cout << "SfmlController (" << c << "): got player " << c->my_player << "\n";
-								c->output_queue.push(new CreatePlayer(c->my_player)); // if model is waiting, this is also interpreted as Ready
-								return;
-							}
+							std::cout << "SfmlController (" << c << "): Asking for player\n";
+							c->output_queue.push(new AskPlayer(c));
+							c->phase = c->model_state.phase();
 							break;
 						default:
 							break;
@@ -44,7 +37,8 @@ BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const SfmlInput& e)
 					break;
 			}
 		}; break;
-		case model::State::PLAYING: {
+		// no sfml input events are handled when WAIT-ing (we're waiting for a CreatePlayer event)
+		case model::PLAYING: {
 			switch (se.type) {
 				// key pressed
 				case sf::Event::KeyPressed:
@@ -75,14 +69,15 @@ BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const SfmlInput& e)
 					break;
 			}
 		}; break;
-		case model::State::RECAP:
-		case model::State::GAMEOVER: {
+		case model::RECAP:
+		case model::GAMEOVER: {
 			switch (se.type) {
 				// key pressed
 				case sf::Event::KeyPressed:
 					switch(se.key.code) {
 						case sf::Keyboard::Space:
 							std::cout << "SfmlController (" << c << "): stop recap/gameover\n";
+							c->output_queue.push(new Ready);
 							break;
 						default:
 							break;
@@ -98,41 +93,51 @@ BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const SfmlInput& e)
 } END_SPECIALIZATION;
 
 
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const ModelStateChange& e) {
+	if (c->update_state(e.state)) {
+		if (c->my_player < 0) {
+			std::cout << "SfmlController (" << c << "): Model changed state, (" << c->model_state.phase()
+					  << ") however, we don't have a player yet.\n";
+			return; // avoiding the phase set
+		}
+		switch (c->model_state.phase()) {
+			case model::WAIT:
+				// model has started!
+				std::cout << "SfmlController (" << c << "): Model has started it seems\n";
+				break;
+			case model::PLAYING:
+				std::cout << "SfmlController (" << c << "): Model is playing it seems\n";
+				break;
+			case model::RECAP:
+				std::cout << "SfmlController (" << c << "): Model is recapping it seems\n";
+				break;
+			default:
+				break;
+		}
+		
+		// as long as we're not pre-waiting, we can update our own phase
+		c->phase = c->model_state.phase();
+	}
+} END_SPECIALIZATION;
+
+
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const CreatePlayer& e) {
+	std::cout << "SfmlController (" << c << "): Got player " << e.ID << "\n";
+	c->my_player = e.ID;
+	// update state
+	ModelStateChange msc(c->model_state);
+	_handle_event(c, msc);
+	std::cout << "SfmlController (" << c << "): After CreatePlayer event, we're in state " << c->phase << "\n";
+} END_SPECIALIZATION;
+
 
 BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const SfmlExit& e) {
-	c->state = model::EXIT;
+	c->phase = model::EXIT;
 	c->output_queue.push(new ReleasePlayer(c->my_player));
 	c->handle->view->handle_event(e.clone());
 	c->done.set();
 } END_SPECIALIZATION;
 
-
-BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const ModelStart& e) {
-	std::cout << "SfmlController (" << c << "): got ModelStart\n";
-	c->handle->view->handle_event(new ModelStart); // it is possible it will get this message twice, that doesn't matter though
-	c->handle->view->handle_event(new DisplayText("Press space to start\n"));
-	c->state = model::WAIT;
-} END_SPECIALIZATION;
-
-
-BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const LevelStart& e) {
-	if (c->my_player >= 0) { // only if actually playing
-		c->state = model::PLAYING;
-	} else {
-		std::cout << "SfmlController (" << c << "): not starting, we don't have a player yet\n";
-	}
-} END_SPECIALIZATION;
-
-
-BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const GameStop& e) {
-	c->state = model::GAMEOVER;
-	std::cout << "SfmlController (" << c << "): Game Over received, value = " << e.victory << "\n";
-} END_SPECIALIZATION;
-
-
-BEGIN_SPECIALIZATION(_handle_event, void, SfmlController* c, const Recap& e) {
-	c->state = model::RECAP;
-} END_SPECIALIZATION;
 
 
 }

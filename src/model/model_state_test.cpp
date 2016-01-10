@@ -1,4 +1,6 @@
  
+#ifdef TEST_MODEL_STATE
+ 
 #include "model_state.hpp"
 #include <iostream>
 
@@ -32,3 +34,5 @@ int main() {
 	
 	cout << (s == ss) << "\n";
 }
+
+#endif

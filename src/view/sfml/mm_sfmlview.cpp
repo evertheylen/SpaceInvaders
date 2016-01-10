@@ -15,7 +15,7 @@ BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const Event& e) {
 } END_SPECIALIZATION;
 
 BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const Tick& e) {
-	if (v->state == model::PLAYING) {
+	if (v->phase == model::PLAYING) {
 		v->handle->window->clear();
 		v->redraw(); // always 'expect' a tick
 	}
@@ -52,49 +52,32 @@ BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const DisplayText& e) {
 
 BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const SfmlExit& e) {
 	if (v->handle->window->isOpen()) v->handle->window->close();
-	v->state = model::EXIT;
+	v->phase = model::EXIT;
 	v->done.set();
 } END_SPECIALIZATION;
 
 
 
-BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const ModelStart& e) {
-	std::cout << "SfmlView: got ModelStart\n";
-	if (v->state != model::PRE_WAIT) {
-		if (not v->concurrent and v->handle->controller == nullptr)
-			v->handle->init();
-		v->handle->window->setActive(true);
-		v->handle->window->clear(sf::Color::Black);
-		v->handle->window->display();
-		v->state = model::WAIT;
-		std::cout << "SfmlView: ModelStart handled\n";
+BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const ModelStateChange& e) {
+	if (v->update_state(e.state)) {
+		switch (v->model_state.phase()) {
+			case model::WAIT:
+				// model has started!
+				std::cout << "SfmlView: Model has started it seems\n";
+				break;
+			case model::PLAYING:
+				std::cout << "SfmlView: Model is playing it seems\n";
+				break;
+			case model::RECAP:
+				std::cout << "SfmlView: Model is recapping it seems\n";
+				break;
+			default:
+				break;
+		}
+		
+		v->phase_change(v->model_state.phase());
 	}
 } END_SPECIALIZATION;
-
-
-BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const GameStop& e) {
-	v->state = model::GAMEOVER;
-	std::cout << "SfmlView: Game Over received, value = " << e.victory << "\n";
-} END_SPECIALIZATION;
-
-
-BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const Recap& e) {
-	std::cout << "SfmlView stops playing\n";
-	v->state = model::RECAP;
-} END_SPECIALIZATION;
-
-
-BEGIN_SPECIALIZATION(_handle_event, void, SfmlView* v, const LevelStart& e) {
-	std::cout << "SfmlView starts playing\n";
-	v->handle->window->setSize(sf::Vector2u(e.level->width, e.level->height));
-	sf::View vw = v->handle->window->getView();
-	v->backgroundsprite.setScale(double(e.level->width) / vw.getSize().x, double(e.level->height) / vw.getSize().y);
-	vw.reset(sf::FloatRect(0,0,e.level->width, e.level->height));
-	v->backgroundsprite.setTextureRect(sf::IntRect(0, 0, e.level->width, e.level->height));
-	v->handle->window->setView(vw);
-	v->state = model::PLAYING;
-} END_SPECIALIZATION;
-
 
 
 // Drawing

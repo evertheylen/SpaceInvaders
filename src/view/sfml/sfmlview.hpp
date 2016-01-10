@@ -5,6 +5,7 @@
 #include <memory>
 #include <condition_variable>
 #include <vector>
+#include <string>
 
 #include "SFML/Graphics.hpp"
 #include "yorel/multi_methods.hpp"
@@ -15,6 +16,7 @@
 #include "model/entity/entity.hpp"
 #include "util/ccq/ccq.hpp"
 #include "util/flag/flag.hpp"
+#include "util/rwlock/rwlock.hpp"
 #include "model/model_state.hpp"
 
 #include "sfmlresources.hpp"
@@ -44,7 +46,7 @@ public:
 	// may dispatch the events to the functions in mm_sfmlview.cpp
 	void handle_event(Event* e);
 	
-	bool is_concurrent() { return concurrent; };
+	bool is_concurrent() const { return concurrent; };
 	
 	void wait_until_done() { done.wait(); };
 	
@@ -64,11 +66,25 @@ private:
 	
 	util::CCQueue<Event*> queue;
 	
-	model::State state = model::WAIT;
+	model::Phase phase = model::PRE_WAIT;
 	void loop();
 	
-	void text_mode(); // Recap, GameOver, Wait
-	void game_mode(); // Playing
+	// in contrast to the model, these aren't loops
+	// they are simple functions that just run something once
+	void wait();
+	void playing_cc();
+	void playing_syn();
+	void recap();
+	void gameover();
+	
+	void resize(int width, int height, bool blur=false);
+	void draw_text(int x, int y, const std::string& s);
+	void draw_overlay();
+	void draw_score();
+	
+	void phase_change(model::Phase newphase);
+	
+	void handle_all_events();
 	
 	Game* game;
 	
@@ -83,6 +99,7 @@ private:
 	vc::SfmlVc* handle;
 	bool concurrent;
 	util::Flag done;
+	util::RWLock::TimepointT timestamp;
 	
 	// statistics
 	long int ticks = 0;

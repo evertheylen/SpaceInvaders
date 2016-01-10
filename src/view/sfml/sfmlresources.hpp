@@ -23,6 +23,7 @@ public:
 		assert(font.loadFromFile("data/fonts/roboto.ttf"));
 		
 		assert(background.loadFromFile("data/textures/background.png"));
+		assert(background_blur.loadFromFile("data/textures/background_blur.png"));
 	}
 	
 	sf::Texture player;
@@ -39,6 +40,7 @@ public:
 	sf::Font font;
 	
 	sf::Texture background;
+	sf::Texture background_blur;
 };
 
 }

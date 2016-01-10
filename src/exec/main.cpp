@@ -76,6 +76,8 @@ int main(int argc, char** argv) {
 		g.run();
 	}
 	
+	std::cout << "Thanks for playing!\n";
+	
 	return 0;
 }
 

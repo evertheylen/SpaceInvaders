@@ -72,6 +72,16 @@ Model::Model(const picojson::value& conf, Game* g): game(g) {
 	alien_periodical = util::Periodical({12}); // TODO
 }
 
+// make sure you have read_lock before calling
+Player* Model::get_player(int ID) const {
+	if (players.find(ID) != players.end()) {
+		return players.find(ID)->second;
+	} else {
+		return nullptr;
+	}
+}
+
+
 std::vector<std::thread*> Model::start() {
 	// TODO assert only one thread
 	return {new std::thread(&Model::loop, this)};
@@ -81,23 +91,47 @@ void Model::loop() {
 	// The game has started!
 	// It's important I notify the controllers first
 	// The controller needs to start the window
-	game->notify_controllers(new ModelStart);
-	game->notify_views(new ModelStart);
+	state.set(WAIT);
 	
 	while (true) {
-		switch (state) {
-			case State::WAIT:
+		// first prepare state data
+		switch (state.phase()) {
+			case PLAYING:
+				state.playing.level = &levels[current_level];
+				state.playing.levelnum = current_level;
+				break;
+			case RECAP:
+				state.playing.level = &levels[current_level];
+				state.recap.levelnum = current_level;
+				state.recap.scores[0] = 500; // TODO
+				break;
+			case GAMEOVER:
+				state.gameover.victory = victory; // TODO
+				break;
+			default:
+				break;
+		}
+		
+		// then notify all of the state change
+		game->notify_all(new ModelStateChange(state));
+		
+		// then select the right loop
+		switch (state.phase()) {
+			case PRE_WAIT:
+			case WAIT:
 				wait();
 				break;
-			case State::PLAYING:
+			case PLAYING:
 				playing();
 				break;
-			case State::RECAP:
-			case State::GAMEOVER:
+			case RECAP:
 				recap();
 				break;
-			case State::EXIT:
-				return;
+			case GAMEOVER:
+				gameover();
+				break;
+			case EXIT:
+				return; // and close this thread
 		}
 	}
 }
@@ -110,7 +144,7 @@ void Model::playing() {
 	int move_alien_row = 0;
 	int move_alien_col = 0;
 	
-	while (state == PLAYING) {
+	while (state.phase() == PLAYING) {
 		// tick
 		prev_tick = current_tick;
 		current_tick = watch.now();
@@ -129,18 +163,33 @@ void Model::playing() {
 		// update views
 		// Could be concurrent, could be blocking. The View is responsible for that.
 		game->notify_views(new Tick);
+		std::cout << "Model: after tick\n";
 		
 		game->entity_lock.write_lock();
+		std::cout << "Model: after write lock\n";
 		
-		// --- Actual calculations of next 'frame' ---
+		//BEGIN Actual calculations of next 'frame' ---
 		// movemements
-		for (Entity* e: entities) {
+		for (Entity* e: saved_entities) {
 			if (e->mov.dir.length() > 0) {
 				e->mov.perform(duration, e->pos);
 				check_collisions(e);
 			}
 			if (not check_collision(e, &world)) {
 				e->killme = true; // out of world
+			}
+		}
+		
+		for (auto iter = players.begin(); iter != players.end(); iter++) {
+			Player* e = iter->second;
+			if (e->mov.dir.length() > 0) {
+				e->mov.perform(duration, e->pos);
+				check_collisions(e);
+			}
+			if (e->pos.x <= 0.0) {
+				e->pos.x = 0.0;
+			} else if ((e->pos.x + e->size.x) >= world.size.x) {
+				e->pos.x = world.size.x;
 			}
 		}
 		
@@ -184,6 +233,8 @@ void Model::playing() {
 					delete *iter;
 					entities.erase(*iter);
 					saved_entities.erase(iter++);
+				} else {
+					(*iter)->killme = false;
 				}
 			} else {
 				++iter;
@@ -194,13 +245,15 @@ void Model::playing() {
 			if (iter->second->killme) {
 				if (_kill(this, *(iter->second))) {
 					entities.erase(iter->second);
-					delete iter->second;
-					players.erase(iter++);
+					iter++;
+				} else {
+					iter->second->killme = false;
 				}
 			} else {
 				++iter;
 			}
 		}
+		//END
 		
 		game->entity_lock.write_unlock();
 		
@@ -213,18 +266,35 @@ void Model::playing() {
 }
 
 void Model::wait() {
-	while (Event* e = game->get_input_event()) {
-		std::cerr << " [ V   M<--C ] Model pulling Event from Controllers: " << e->name() << "\n";
-		handle_event(e);
+	while (state.phase() == WAIT) {
+		while (Event* e = game->get_input_event()) {
+			std::cerr << " [ V   M<--C ] Model pulling Event from Controllers: " << e->name() << "\n";
+			handle_event(e);
+		}
+		game->notify_views(new Tick);
 	}
 }
 
 void Model::recap() {
-	while (state == RECAP) while (Event* e = game->get_input_event()) {
-		std::cerr << " [ V   M<--C ] Model pulling Event from Controllers: " << e->name() << "\n";
-		handle_event(e);
+	while (state.phase() == RECAP) {
+		while (Event* e = game->get_input_event()) {
+			std::cerr << " [ V   M<--C ] Model pulling Event from Controllers: " << e->name() << "\n";
+			handle_event(e);
+		}
+		game->notify_views(new Tick);
 	}
 }
+
+void Model::gameover() {
+	while (state.phase() == GAMEOVER) {
+		while (Event* e = game->get_input_event()) {
+			std::cerr << " [ V   M<--C ] Model pulling Event from Controllers: " << e->name() << "\n";
+			handle_event(e);
+		}
+		game->notify_views(new Tick);
+	}
+}
+
 
 // note: assumes a is the smaller object
 bool Model::check_collision(Entity* a, Entity* b) {
@@ -253,13 +323,6 @@ void Model::check_collisions(Entity* a) {
 	}
 }
 
-Level* Model::get_current_level() {
-	if (0 <= current_level and current_level < levels.size()) {
-		return &levels[current_level];
-	} else {
-		return nullptr;
-	}
-}
 
 void Model::move_alien(int& row, int& col) {
 	if (topleftmost == nullptr && toprightmost == nullptr) return;
@@ -325,13 +388,16 @@ bool Model::next_alien(int& row, int& col) {
 }
 
 void Model::win_level() {
-	state = RECAP;
-	game->notify_all(new Recap);
+	int next_level = current_level + 1;
+	if (next_level > levels.size()) {
+		victory = true;
+	}
+	state.set(RECAP);
 }
 
 void Model::lose_level() {
-	state = RECAP;
-	game->notify_all(new Recap);
+	victory = false;
+	state.set(GAMEOVER);
 }
 
 
@@ -342,9 +408,16 @@ void Model::load_level(Level& l) {
 	world.size.x = l.width;
 	world.size.y = l.height;
 	
+	// also add 'earth': flat entity at the bottom
+	Earth* earth = new Earth(0,l.height-1);
+	earth->size.x = l.width;
+	earth->size.y = 1;
+	saved_entities.insert(earth);
+	entities.insert(earth);
+	
 	// add players
 	for (auto& it: players) {
-		entities.insert(it.second);
+		if (it.second->lives > 0) place_player(l, it.first, it.second);
 	}
 	
 	// create aliens
@@ -373,11 +446,23 @@ void Model::load_level(Level& l) {
 	}
 }
 
+void Model::place_player(Level& l, int ID, Player* p) {
+	entities.insert(p);
+	p->pos.x = (l.width*0.125) + (((double(l.width)*0.75) / double(max_players-1))*ID) - (p->size.x/2);
+	p->pos.y = l.height - Player::height_from_earth;
+	players_alive++;
+}
+
 
 void Model::unload_level() {
+	players_alive = 0;
 	// not players
 	for (Entity* e: saved_entities) {
 		delete e;
+	}
+	for (auto it: players) {
+		Player* p = it.second;
+		p->mov.dir *= 0;
 	}
 	alien_grid.clear();
 	bottom_aliens.clear();

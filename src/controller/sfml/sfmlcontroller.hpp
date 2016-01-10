@@ -42,9 +42,11 @@ public:
 	
 	Event* get_event();
 	
-	bool is_concurrent() { return concurrent; }
+	bool is_concurrent() const { return concurrent; }
 	
 	void wait_until_done() { done.wait(); }
+	
+	int get_player() const { return my_player; }
 	
 	// make sure all the handlers can actually access this class
 	template <typename T>
@@ -59,7 +61,7 @@ private:
 	util::CCQueue<Event*> output_queue; // output to model
 	util::Sleepable slp;
 	
-	model::State state = model::State::PRE_WAIT;
+	model::Phase phase = model::PRE_WAIT;
 	
 	Game* game;
 	int my_player = -1;

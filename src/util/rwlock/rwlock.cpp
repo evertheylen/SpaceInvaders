@@ -3,6 +3,8 @@
 
 #include "rwlock.hpp"
 
+using namespace si::util;
+
 RWLock::RWLock() {
 	lock = new pthread_rwlock_t; // default attributes
 	attr = new pthread_rwlockattr_t;
@@ -11,7 +13,7 @@ RWLock::RWLock() {
 	pthread_rwlock_init(lock, attr);
 }
 
-TimepointT RWLock::new_timestamp() {
+RWLock::TimepointT RWLock::new_timestamp() {
 	return TimepointT(); // should be beginning of time
 }
 
